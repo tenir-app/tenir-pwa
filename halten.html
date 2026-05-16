@@ -641,9 +641,9 @@
                               color:var(--text3); font-weight:700; margin:20px 0 10px;
                               padding-bottom:6px; border-bottom:1px solid var(--border); }
     .dontlose-section-title:first-child { margin-top:0; }
-    .dontlose-item   { display:flex; justify-content:space-between; align-items:flex-start;
-                       padding:10px 0; border-bottom:0.5px solid var(--border); font-size:13px; gap:12px;
-                       min-width:0; flex-wrap:wrap; }
+    .dontlose-item   { display:flex; flex-direction:column; align-items:flex-start;
+                       padding:10px 0; border-bottom:0.5px solid var(--border); font-size:13px; gap:6px;
+                       min-width:0; }
     .dontlose-item:last-child { border-bottom:none; }
     .dontlose-item-name { font-weight:500; flex:1 1 160px; min-width:120px; max-width:100%; line-height:1.45; overflow-wrap:break-word; word-break:normal; }
     .dontlose-item-badge { font-size:11px; font-weight:600; padding:3px 9px; border-radius:99px;
@@ -9012,8 +9012,7 @@ function openDoNotLoseModal() {
         : `<span class="dontlose-item-badge dontlose-badge-amber">Bald</span>`;
       const sub = w.waterDate ? `Befüllt am ${w.waterDate}` : "";
       html += `<div class="dontlose-item">
-        <div class="dontlose-item-name">${w.name}<div style="font-size:11px;color:var(--text3)">${w.liters.toFixed(1)} L${sub?" · "+sub:""} · erneuern vor ${w.renewBefore}</div></div>
-        ${badge}</div>`;
+        ${badge}<div class="dontlose-item-name">${w.name}<div style="font-size:11px;color:var(--text3)">${w.liters.toFixed(1)} L${sub?" · "+sub:""} · erneuern vor ${w.renewBefore}</div></div></div>`;
     });
   }
 
@@ -9046,7 +9045,7 @@ function openDoNotLoseModal() {
       shownIds.add(item.id);
       const badgeLabel = getDoNotLoseFoodLabel(item, status);
       const badge = `<span class="dontlose-item-badge dontlose-badge-red">${badgeLabel}</span>`;
-      html += `<div class="dontlose-item"><div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}${_delBtn(item,'dntls')}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div>${badge}</div>`;
+      html += `<div class="dontlose-item">${badge}<div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}${_delBtn(item,'dntls')}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div></div>`;
     });
   }
 
@@ -9091,7 +9090,7 @@ function openDoNotLoseModal() {
           badgeLabel = label || item.expiry || "Bald";
         }
         const badge = `<span class="dontlose-item-badge dontlose-badge-amber">${badgeLabel}</span>`;
-        html += `<div class="dontlose-item"><div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}${_delBtn(item,'dntls')}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div>${badge}</div>`;
+        html += `<div class="dontlose-item">${badge}<div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}${_delBtn(item,'dntls')}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div></div>`;
       });
   }
 
@@ -9117,7 +9116,7 @@ function openDoNotLoseModal() {
         else                 badgeLabel = `seit ${days} Tagen geöffnet`;
       }
       const badge = `<span class="dontlose-item-badge dontlose-badge-amber">${badgeLabel}</span>`;
-      html += `<div class="dontlose-item"><div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}${_delBtn(item,'dntls2')}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div>${badge}</div>`;
+      html += `<div class="dontlose-item">${badge}<div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}${_delBtn(item,'dntls2')}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div></div>`;
     });
   }
 
