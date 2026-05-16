@@ -645,7 +645,7 @@
                        padding:10px 0; border-bottom:0.5px solid var(--border); font-size:13px; gap:6px;
                        min-width:0; }
     .dontlose-item:last-child { border-bottom:none; }
-    .dontlose-item-name { font-weight:500; flex:1 1 160px; min-width:120px; max-width:100%; line-height:1.45; overflow-wrap:break-word; word-break:normal; }
+    .dontlose-item-name { font-weight:500; flex:0 1 auto; min-width:0; max-width:100%; line-height:1.35; overflow-wrap:break-word; word-break:normal; }
     .dontlose-item-badge { font-size:11px; font-weight:600; padding:3px 9px; border-radius:99px;
                            white-space:nowrap; flex-shrink:0; margin-top:1px; }    .dontlose-badge-red   { background:#fee2e2; color:#a32d2d; }
     .dontlose-badge-amber { background:#fef3c7; color:#854f0b; }
@@ -785,7 +785,8 @@
       .water-distribution-grid { grid-template-columns:1fr; }
     }
     @media (max-width:540px) and (orientation:portrait) {
-      .dontlose-item { flex-direction:column; gap:4px; padding:7px 0; flex-wrap:nowrap; }
+      .dontlose-item { flex-direction:column; gap:6px; padding:10px 0; flex-wrap:nowrap; }
+      .dontlose-item-name { flex:0 1 auto; min-width:0; width:100%; }
       .dontlose-item-badge { align-self:flex-start; margin-top:0; }
     }
   </style>
@@ -9012,7 +9013,7 @@ function openDoNotLoseModal() {
         : `<span class="dontlose-item-badge dontlose-badge-amber">Bald</span>`;
       const sub = w.waterDate ? `Befüllt am ${w.waterDate}` : "";
       html += `<div class="dontlose-item">
-        ${badge}<div class="dontlose-item-name">${w.name}<div style="font-size:11px;color:var(--text3)">${w.liters.toFixed(1)} L${sub?" · "+sub:""} · erneuern vor ${w.renewBefore}</div></div></div>`;
+        <div class="dontlose-item-name">${w.name}<div style="font-size:11px;color:var(--text3)">${w.liters.toFixed(1)} L${sub?" · "+sub:""} · erneuern vor ${w.renewBefore}</div></div>${badge}</div>`;
     });
   }
 
@@ -9045,7 +9046,7 @@ function openDoNotLoseModal() {
       shownIds.add(item.id);
       const badgeLabel = getDoNotLoseFoodLabel(item, status);
       const badge = `<span class="dontlose-item-badge dontlose-badge-red">${badgeLabel}</span>`;
-      html += `<div class="dontlose-item">${badge}<div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}${_delBtn(item,'dntls')}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div></div>`;
+      html += `<div class="dontlose-item"><div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}${_delBtn(item,'dntls')}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div>${badge}</div>`;
     });
   }
 
@@ -9090,7 +9091,7 @@ function openDoNotLoseModal() {
           badgeLabel = label || item.expiry || "Bald";
         }
         const badge = `<span class="dontlose-item-badge dontlose-badge-amber">${badgeLabel}</span>`;
-        html += `<div class="dontlose-item">${badge}<div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}${_delBtn(item,'dntls')}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div></div>`;
+        html += `<div class="dontlose-item"><div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}${_delBtn(item,'dntls')}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div>${badge}</div>`;
       });
   }
 
@@ -9116,7 +9117,7 @@ function openDoNotLoseModal() {
         else                 badgeLabel = `seit ${days} Tagen geöffnet`;
       }
       const badge = `<span class="dontlose-item-badge dontlose-badge-amber">${badgeLabel}</span>`;
-      html += `<div class="dontlose-item">${badge}<div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}${_delBtn(item,'dntls2')}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div></div>`;
+      html += `<div class="dontlose-item"><div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}${_delBtn(item,'dntls2')}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div>${badge}</div>`;
     });
   }
 
