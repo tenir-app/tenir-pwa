@@ -1,4 +1,4 @@
-const CACHE_NAME = "tenir-v2026-05-15-01";
+const CACHE_NAME = "tenir-v2026-05-16-01";
 
 const ASSETS = [
   "./",

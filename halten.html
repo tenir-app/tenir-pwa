@@ -215,13 +215,14 @@
     @media(min-width:540px){ .water-stats { grid-template-columns:repeat(5,minmax(0,1fr)); } }
     /* Ergänzende Flüssigkeiten — integrierte Karte, klickbar */
     .water-compl-row { display:none; }
-    .stat-compl      { opacity:.7; border:1px dashed var(--border) !important;
-                       background:transparent !important; cursor:pointer; position:relative; }
-    .stat-compl:hover { opacity:1; border-color:var(--blue) !important; background:var(--surface2) !important; }
+    .stat-compl      { border:1px dashed color-mix(in srgb, var(--green) 45%, var(--border)) !important;
+                       cursor:pointer; position:relative; }
+    .stat-compl:hover { border-color:var(--green) !important; background:var(--green-bg) !important; }
     .stat-compl-val  { font-size:20px !important; color:var(--text2) !important; }
-    .stat-compl .stat-label { font-size:9.5px; hyphens:auto; padding-right:28px; }
+    .stat-compl .stat-label { font-size:9.5px; hyphens:auto; padding-right:26px; color:var(--text2); }
+    .stat-compl .stat-sub   { font-size:9px; color:var(--text3); }
     .stat-compl-hint { position:absolute; top:7px; right:7px; font-size:10px;
-                       color:var(--text3); pointer-events:none; }
+                       color:var(--green); opacity:.7; pointer-events:none; }
     /* Modal ergänzende Flüssigkeiten */
     #compl-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
                      backdrop-filter:blur(3px); z-index:9996; align-items:flex-start;
@@ -776,11 +777,16 @@
       .candidate-item > * { min-width:0; }
       /* Noms produits modale : retour à la ligne naturel, jamais lettre par lettre */
       .dontlose-item-name { min-width:100px; word-break:normal; overflow-wrap:break-word; }
+      /* Portrait iPhone : badge temporel sous le nom, pas à droite */
       /* Cartes eau : 2 colonnes sur mobile */
       .water-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .water-stats .stat { min-width:0; }
       /* Wasserverteilung : 1 colonne sur mobile */
       .water-distribution-grid { grid-template-columns:1fr; }
+    }
+    @media (max-width:540px) and (orientation:portrait) {
+      .dontlose-item { flex-direction:column; gap:6px; }
+      .dontlose-item-badge { align-self:flex-start; margin-top:0; }
     }
   </style>
 </head>
@@ -813,7 +819,7 @@
     <!-- Totaux nutritionnels -->
     <div class="stats-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:1.25rem">
       <div class="stat"><div class="stat-label">Eiweiß</div><div class="stat-value" id="iv-protein">—</div><div class="stat-sub">im Vorrat</div></div>
-      <div class="stat"><div class="stat-label">Kohlenhydrate</div><div class="stat-value" id="iv-carbs">—</div><div class="stat-sub">im Vorrat</div></div>
+      <div class="stat"><div class="stat-label" title="Kohlenhydrate">KH</div><div class="stat-value" id="iv-carbs">—</div><div class="stat-sub">im Vorrat</div></div>
       <div class="stat"><div class="stat-label">Fette</div><div class="stat-value" id="iv-fat">—</div><div class="stat-sub">im Vorrat</div></div>
     </div>
 
@@ -842,6 +848,7 @@
           <button class="btn btn-analyze" onclick="analyzeQuickInput()">Prüfen</button>
         </div>
         <div class="quick-entry-feedback" id="quick-feedback"></div>
+        <p style="font-size:11px;color:var(--text3);margin:4px 0 10px;font-style:italic;line-height:1.4">Auch ungenaue Spracheingaben funktionieren oft.</p>
         <pre class="quick-debug" id="quick-debug"></pre>
         <!-- Scan-Vorschau -->
         <div class="scan-preview" id="scan-preview" style="display:none">
@@ -986,8 +993,8 @@
     <div class="water-stats">
       <div class="stat"><div class="stat-label">Wasser gesamt</div><div class="stat-value xl" id="w-total">0</div><div class="stat-sub">Liter</div></div>
       <div class="stat"><div class="stat-label">Ungeöffnet</div><div class="stat-value xl" id="w-available">0</div><div class="stat-sub">Liter</div></div>
+      <div class="stat"><div class="stat-label">Wasser / Tag</div><div class="stat-value" id="w-daily-need">—</div><div class="stat-sub" id="w-daily-need-sub">L pro Haushalt</div></div>
       <div class="stat"><div class="stat-label">Reichweite</div><div class="stat-value xl" id="w-days">0</div><div class="stat-sub">Tage</div></div>
-      <div class="stat"><div class="stat-label">Wasser / Tag</div><div class="stat-value" id="w-daily-need">—</div><div class="stat-sub" id="w-daily-need-sub">L</div></div>
       <div class="stat stat-compl" role="button" tabindex="0"
            onclick="openComplementaryLiquidsModal()"
            onkeydown="if(event.key==='Enter'||event.key===' ')openComplementaryLiquidsModal()">
@@ -1180,7 +1187,7 @@
       <div class="stat">
         <div class="stat-label">Kochbedarf</div>
         <div class="stat-value xl" id="cook-needed-hours">—</div>
-        <div class="stat-sub">Stunden verfügbar</div>
+        <div class="stat-sub">Stunden</div>
       </div>
       <div class="stat">
         <div class="stat-label">Kochabdeckung</div>
@@ -4287,19 +4294,19 @@ function computeCookingCapacity() {
   let level, message;
   if (demand.totalMinutesNeeded === 0) {
     level   = "good";
-    message = "Aucun aliment nécessitant une cuisson dans votre stock.";
+    message = "Keine Lebensmittel im Vorrat, die gekocht werden müssen.";
   } else if (totalMinutes === 0) {
     level   = "bad";
     message = "Keine Kochkapazität: Ein Teil des Vorrats ist nicht nutzbar.";
   } else if (coverage < 0.5) {
     level   = "bad";
-    message = "Moins de la moitié du stock à cuire est réellement cuisinable.";
+    message = "Weniger als die Hälfte des zu kochenden Vorrats ist tatsächlich kochbar.";
   } else if (coverage < 1) {
     level   = "warn";
     message = "Teilkochen: Ein Teil des Vorrats erfordert fehlende Energie.";
   } else {
     level   = "good";
-    message = "Énergie de cuisson suffisante pour le stock actuel.";
+    message = "Kochenergie reicht für den aktuellen Vorrat.";
   }
 
   return { mode:"offgrid", totalMinutes, gasMinutes, alcoholMinutes, gasGrams, alcoholLiters,
@@ -4392,7 +4399,7 @@ function migrateCookingUnits() {
 }
 
 function addGasItem() {
-  const name       = document.getElementById("cook-gas-name").value.trim() || "Cartouche gaz";
+  const name       = document.getElementById("cook-gas-name").value.trim() || "Gaskartusche";
   const count      = parseInt(document.getElementById("cook-gas-count").value, 10);
   const unitAmount = parseFloat(document.getElementById("cook-gas-unit-amount").value);
   if (!count || count < 1 || !unitAmount || unitAmount <= 0) return;
@@ -7491,7 +7498,7 @@ function renderWater() {
   const wDnEl  = document.getElementById("w-daily-need");
   const wDnSub = document.getElementById("w-daily-need-sub");
   if (wDnEl)  wDnEl.textContent  = dailyWaterNeed;
-  if (wDnSub) wDnSub.textContent = `pro Person`;
+  if (wDnSub) wDnSub.textContent = `L pro Haushalt`;
   // Liquides complémentaires — indicatif
   const wComplEl = document.getElementById("w-compl");
   if (wComplEl) {
