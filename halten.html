@@ -641,11 +641,11 @@
                               color:var(--text3); font-weight:700; margin:20px 0 10px;
                               padding-bottom:6px; border-bottom:1px solid var(--border); }
     .dontlose-section-title:first-child { margin-top:0; }
-    .dontlose-item   { display:flex; flex-direction:column; align-items:flex-start;
-                       padding:10px 0; border-bottom:0.5px solid var(--border); font-size:13px; gap:6px;
+    .dontlose-item   { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-start;
+                       padding:10px 0; border-bottom:0.5px solid var(--border); font-size:13px; gap:8px 12px;
                        min-width:0; }
     .dontlose-item:last-child { border-bottom:none; }
-    .dontlose-item-name { font-weight:500; flex:0 1 auto; min-width:0; max-width:100%; line-height:1.35; overflow-wrap:break-word; word-break:normal; }
+    .dontlose-item-name { font-weight:500; flex:1 1 160px; min-width:120px; max-width:100%; line-height:1.45; overflow-wrap:break-word; word-break:normal; }
     .dontlose-item-badge { font-size:11px; font-weight:600; padding:3px 9px; border-radius:99px;
                            white-space:nowrap; flex-shrink:0; margin-top:1px; }    .dontlose-badge-red   { background:#fee2e2; color:#a32d2d; }
     .dontlose-badge-amber { background:#fef3c7; color:#854f0b; }
@@ -785,8 +785,8 @@
       .water-distribution-grid { grid-template-columns:1fr; }
     }
     @media (max-width:540px) and (orientation:portrait) {
-      .dontlose-item { flex-direction:column; gap:6px; padding:10px 0; flex-wrap:nowrap; }
-      .dontlose-item-name { flex:0 1 auto; min-width:0; width:100%; }
+      .dontlose-item { flex-direction:column; gap:4px; padding:8px 0; flex-wrap:nowrap; }
+      .dontlose-item-name { flex:0 0 auto; min-width:0; width:100%; line-height:1.35; }
       .dontlose-item-badge { align-self:flex-start; margin-top:0; }
     }
   </style>
