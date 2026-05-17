@@ -10463,18 +10463,24 @@ function initFirstFoodGuidance() {
   const qi   = document.getElementById("quick-input");
   if (!loc || !qi) return;
 
-  // Montrer le hint Lageort + focus auto
+  // Étape 1 : scroll vers Lagerort + hint + focus
   _ffuShow("ffu-hint-location");
-  setTimeout(() => { try { loc.focus(); } catch(e){} }, 350);
+  setTimeout(() => {
+    loc.scrollIntoView({ behavior: "smooth", block: "center" });
+    try { loc.focus(); } catch(e) {}
+  }, 300);
 
-  // Quand l'utilisateur quitte Lageort → focus quick-input + hint micro
+  // Quand l'utilisateur quitte Lagerort → étape 2 : scroll vers Schnelleingabe
   function onLocBlur() {
     if (!_ffuIsActive()) return;
     _ffuHide("ffu-hint-location");
     _ffuShow("ffu-hint-mic");
     qi.classList.add("ffu-active");
-    setTimeout(() => { try { qi.focus(); } catch(e){} }, 80);
     loc.removeEventListener("blur", onLocBlur);
+    setTimeout(() => {
+      qi.scrollIntoView({ behavior: "smooth", block: "center" });
+      focusQuickInput();
+    }, 80);
   }
   loc.addEventListener("blur", onLocBlur);
 
