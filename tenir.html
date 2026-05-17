@@ -130,6 +130,18 @@
       background:var(--surface); color:var(--text); }
     .location-input:focus { border-color:var(--blue); outline:none; }
     .location-hint   { font-size:10px; color:var(--text3); margin-top:2px; display:block; }
+    /* ── Guidage premier ajout ── */
+    .ffu-hint { display:none; font-size:12px; color:var(--text2); background:var(--green-bg);
+                border:0.5px solid var(--green); border-radius:var(--r); padding:9px 12px;
+                margin-top:6px; line-height:1.5; }
+    .ffu-hint strong { color:var(--green); }
+    .ffu-hint .ffu-example { font-size:11px; color:var(--text3); margin-top:4px; font-style:italic; }
+    .ffu-hint.visible { display:block; }
+    @keyframes ffu-pulse {
+      0%,100% { box-shadow:0 0 0 0 rgba(74,107,42,.25); }
+      50%      { box-shadow:0 0 0 6px rgba(74,107,42,0); }
+    }
+    #quick-input.ffu-active { animation:ffu-pulse 1.4s ease-in-out 3; border-color:var(--green) !important; }
     /* ── Entrée rapide mobile ── */
     .quick-entry-section { margin-bottom:14px; }
     .quick-entry-label   { font-size:12px; font-weight:600; color:var(--text2);
@@ -819,6 +831,10 @@
           placeholder="ex. étagère 1 sous-sol, boîte 2, Keller Regal 2…"
           autocomplete="off" autocorrect="off"/>
         <span class="location-hint">Ce champ reste actif pour tous les produits ajoutés ensuite.</span>
+        <div class="ffu-hint" id="ffu-hint-location">
+          <strong>Où ce produit sera-t-il rangé ?</strong> Entrez le lieu de stockage.<br>
+          <span class="ffu-example">ex : Cave · Cuisine · Étagère 1 · Frigo</span>
+        </div>
       </div>
 
       <!-- Entrée rapide — chemin principal sur mobile -->
@@ -834,6 +850,10 @@
           <button class="btn btn-analyze" onclick="analyzeQuickInput()">Analyser</button>
         </div>
         <div class="quick-entry-feedback" id="quick-feedback"></div>
+        <div class="ffu-hint" id="ffu-hint-mic">
+          <strong>Touchez le microphone à côté de la barre d'espace puis parlez.</strong>
+          <div class="ffu-example">Exemple : 400 g pois chiches en conserve mai 2026</div>
+        </div>
         <p style="font-size:11px;color:var(--text3);margin:4px 0 10px;font-style:italic;line-height:1.4">Même des dictées approximatives fonctionnent souvent.</p>
         <pre class="quick-debug" id="quick-debug"></pre>
         <!-- Aperçu mode scan -->
@@ -852,7 +872,7 @@
           </div>
           <div class="scan-preview-actions">
             <button class="btn btn-scan-confirm" id="scan-confirm-btn" onclick="scanConfirm()">✓ Confirmer et continuer</button>
-            <button class="btn btn-scan-cancel" onclick="scanCancel()">Corriger</button>
+            <button class="btn btn-scan-cancel" onclick="scanCancel()">Recommencer</button>
           </div>
         </div>
         <div class="scan-counter" id="scan-counter">Ajoutés cette session : <strong id="scan-count">0</strong></div>
@@ -5865,10 +5885,15 @@ function toggleScanMode() { /* désactivé — mode scan toujours actif */ }
 function _showScanPreview(parsed) {
   _scanParsed = parsed;
   const $ = id => document.getElementById(id);
-  $("scan-name").textContent = parsed.name;
+  $("scan-name").textContent = parsed._displayName || parsed.name;
   $("scan-qty").textContent  = parsed.qty + " " + parsed.unit;
   $("scan-exp").textContent  = parsed.expiry || "sans date";
   $("scan-preview").style.display = "block";
+  // Adapter le libellé du bouton selon la certitude du match
+  const btn = $("scan-confirm-btn");
+  if (btn) btn.textContent = parsed._ambiguous
+    ? "Ouvrir la sélection →"
+    : "✓ Confirmer et continuer";
 }
 
 function scanCancel() {
@@ -5877,6 +5902,10 @@ function scanCancel() {
   if (p) p.style.display = "none";
   const fb = document.getElementById("quick-feedback");
   if (fb) { fb.textContent = ""; fb.className = "quick-entry-feedback"; }
+  setTimeout(() => {
+    const qi = document.getElementById("quick-input");
+    if (qi) { qi.value = ""; qi.focus(); }
+  }, 0);
 }
 
 async function scanConfirm() {
@@ -5967,8 +5996,19 @@ function analyzeQuickInput() {
   const details = document.querySelector(".classic-form-details");
 
   if (parsed && parsed.unit && parsed.name) {
-    // Succès : pré-remplir les champs
-    document.getElementById("f-name").value = parsed.name;
+    // Résoudre le nom canonique dès la prévisualisation
+    const _qResult = getFoodDataSync(parsed.name);
+    const _displayName = (_qResult && _qResult.displayName)
+      ? _qResult.displayName
+      : parsed.name;
+    const _canonicalName = _displayName;
+    // Détecter un match ambigu (sélection de candidats à venir dans addFoodItem)
+    const _ambiguous = !!(_qResult && (
+      (_qResult.data === null && _qResult.matchType === "none" && _qResult.candidates && _qResult.candidates.length > 0) ||
+      (_qResult.matchType === "partial" && _qResult.candidates && _qResult.candidates.length > 1)
+    ));
+    // Succès : pré-remplir les champs (f-name reçoit le nom canonique)
+    document.getElementById("f-name").value = _canonicalName;
     document.getElementById("f-qty").value  = parsed.qty;
     document.getElementById("f-unit").value = parsed.unit;
     if (parsed.expiry) {
@@ -5984,14 +6024,14 @@ function analyzeQuickInput() {
     };
     checkPackageWarning();
     if (details && !_scanMode) details.open = true;
-    let msg = `✓ ${parsed.qty} ${parsed.unit} · ${parsed.name}`;
+    let msg = `✓ ${parsed.qty} ${parsed.unit} · ${_displayName}`;
     if (parsed.expiry) msg += ` · exp. ${parsed.expiry}`;
     feedback.textContent = msg;
     feedback.className   = "quick-entry-feedback ok";
     input.value = "";
-    // Mode scan : afficher l'aperçu de confirmation au lieu d'ouvrir la section classique
+    // Mode scan : afficher l'aperçu avec le nom canonique
     if (_scanMode) {
-      _showScanPreview(parsed);
+      _showScanPreview({ ...parsed, _displayName, _ambiguous });
     }
   } else if (parsed && !parsed.unit) {
     // Emballage sans poids réel
@@ -6712,6 +6752,8 @@ function commitFoodItem(pending, result) {
   renderManualList();
   renderTable();
   saveAppData();
+  localStorage.setItem("tenir_first_food_entry_fr_done", "1");
+  _ffuDisable();
   setTimeout(() => setHint(""), 3000);
   if (_scanMode) focusQuickInputSoon();
 }
@@ -9191,10 +9233,7 @@ function detectSpeechSupport() {
 function renderSpeechStatus() {
   const el = document.getElementById("speech-status");
   if (!el) return;
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  el.textContent = SR
-    ? "🎤 Voix disponible — testez avec le bouton micro"
-    : "🎤 Voix non disponible — utilisez le micro du clavier iOS";
+  el.textContent = "🎤 Dictée iPhone via le microphone du clavier (à côté de la barre d'espace)";
 }
 
 function testMicrophone() {
@@ -9870,6 +9909,7 @@ function runAllVoiceFoodTests() {
 
 document.addEventListener("keydown",(e)=>{
   if(e.key!=="Enter"||document.activeElement.tagName!=="INPUT") return;
+  if(document.activeElement.id==="quick-input") return; // géré par onkeydown inline → analyzeQuickInput uniquement
   const a=document.querySelector(".panel.active").id;
   if(a==="panel-inv"   && !isSearchingFood) addFoodItem();
   if(a==="panel-water") addWaterItem();
@@ -9985,6 +10025,66 @@ if (!DEBUG_MODE) {
 
 
 <script>
+// ── Guidage premier ajout de produit ─────────────────────────────────────
+const FFU_KEY = "tenir_first_food_entry_fr_done";
+
+function _ffuIsActive() { return !localStorage.getItem(FFU_KEY); }
+
+function _ffuShow(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add("visible");
+}
+function _ffuHide(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove("visible");
+}
+function _ffuDisable() {
+  _ffuHide("ffu-hint-location");
+  _ffuHide("ffu-hint-mic");
+  const qi = document.getElementById("quick-input");
+  if (qi) qi.classList.remove("ffu-active");
+}
+
+function initFirstFoodGuidance() {
+  if (!_ffuIsActive()) return;
+
+  const loc = document.getElementById("session-location");
+  const qi  = document.getElementById("quick-input");
+  if (!loc || !qi) return;
+
+  _ffuShow("ffu-hint-location");
+  setTimeout(() => { try { loc.focus(); } catch(e){} }, 350);
+
+  function onLocBlur() {
+    if (!_ffuIsActive()) return;
+    _ffuHide("ffu-hint-location");
+    _ffuShow("ffu-hint-mic");
+    qi.classList.add("ffu-active");
+    setTimeout(() => { try { qi.focus(); } catch(e){} }, 80);
+    loc.removeEventListener("blur", onLocBlur);
+  }
+  loc.addEventListener("blur", onLocBlur);
+
+  qi.addEventListener("focus", function onQiFocus() {
+    if (!_ffuIsActive()) return;
+    _ffuHide("ffu-hint-location");
+    _ffuShow("ffu-hint-mic");
+    qi.classList.add("ffu-active");
+    qi.removeEventListener("focus", onQiFocus);
+  }, { once: true });
+}
+
+(function patchSwitchTabForFFU() {
+  const orig = window.switchTab;
+  if (!orig) return;
+  window.switchTab = function(t) {
+    orig.apply(this, arguments);
+    if (t === "inv" && _ffuIsActive()) {
+      setTimeout(initFirstFoodGuidance, 200);
+    }
+  };
+})();
+
 // ── Onboarding première utilisation ──────────────────────────────────────
 const OB_KEY  = "tenir_onboarding_done";
 const OB_STEP = "tenir_onboarding_step";

@@ -132,6 +132,18 @@
       background:var(--surface); color:var(--text); }
     .location-input:focus { border-color:var(--blue); outline:none; }
     .location-hint   { font-size:10px; color:var(--text3); margin-top:2px; display:block; }
+    /* ── Guidage premier usage ── */
+    .ffu-hint { display:none; font-size:12px; color:var(--text2); background:var(--green-bg);
+                border:0.5px solid var(--green); border-radius:var(--r); padding:9px 12px;
+                margin-top:6px; line-height:1.5; }
+    .ffu-hint strong { color:var(--green); }
+    .ffu-hint .ffu-example { font-size:11px; color:var(--text3); margin-top:4px; font-style:italic; }
+    .ffu-hint.visible { display:block; }
+    @keyframes ffu-pulse {
+      0%,100% { box-shadow:0 0 0 0 rgba(74,107,42,.25); }
+      50%      { box-shadow:0 0 0 6px rgba(74,107,42,0); }
+    }
+    #quick-input.ffu-active { animation:ffu-pulse 1.4s ease-in-out 3; border-color:var(--green) !important; }
     /* ── Schnelleingabe mobil ── */
     .quick-entry-section { margin-bottom:14px; }
     .quick-entry-label   { font-size:12px; font-weight:600; color:var(--text2);
@@ -835,6 +847,10 @@
           placeholder="z.B. Regal 1 Keller, Kiste 2…"
           autocomplete="off" autocorrect="off"/>
         <span class="location-hint">Dieses Feld gilt für alle danach hinzugefügten Produkte.</span>
+        <div class="ffu-hint" id="ffu-hint-location">
+          <strong>Wo liegt das Produkt?</strong> Geben Sie den Lagerort ein.<br>
+          <span class="ffu-example">z.B. Keller · Küche · Regal 1 · Kühlschrank</span>
+        </div>
       </div>
 
       <!-- Schnelleingabe — Hauptpfad mobil -->
@@ -850,6 +866,10 @@
           <button class="btn btn-analyze" onclick="analyzeQuickInput()">Prüfen</button>
         </div>
         <div class="quick-entry-feedback" id="quick-feedback"></div>
+        <div class="ffu-hint" id="ffu-hint-mic">
+          <strong>Tippen Sie auf das Mikrofon neben der Leertaste und sprechen Sie.</strong>
+          <div class="ffu-example">Beispiel: 400 g Kichererbsen Dose Mai 2026</div>
+        </div>
         <p style="font-size:11px;color:var(--text3);margin:4px 0 10px;font-style:italic;line-height:1.4">Auch ungenaue Spracheingaben funktionieren oft.</p>
         <pre class="quick-debug" id="quick-debug"></pre>
         <!-- Scan-Vorschau -->
@@ -868,7 +888,7 @@
           </div>
           <div class="scan-preview-actions">
             <button class="btn btn-scan-confirm" id="scan-confirm-btn" onclick="scanConfirm()">✓ Bestätigen &amp; weiter</button>
-            <button class="btn btn-scan-cancel" onclick="scanCancel()">Korrigieren</button>
+            <button class="btn btn-scan-cancel" onclick="scanCancel()">Neu eingeben</button>
           </div>
         </div>
         <div class="scan-counter" id="scan-counter">Diese Sitzung hinzugefügt: <strong id="scan-count">0</strong></div>
@@ -1525,6 +1545,7 @@ const LOCAL_FOOD_DB = {
   },
   "riz_long": {
     label: "Riz long grain (sec)",
+    labelDE: "Langkornreis (trocken)",
     aliases: ["riz long grain","riz long","langkornreis","long grain rice","riz blanc",
               "langkorn reis","reis langkorn","weissreis","weißreis","weisser reis",
               "reis trocken","reis roh","trockener reis"],
@@ -1535,6 +1556,7 @@ const LOCAL_FOOD_DB = {
   },
   "riz_generique": {
     label: "Riz",
+    labelDE: "Reis",
     aliases: ["riz","reis","rice","riz sec","riz trocken"],
     category: "cereale", state: "dry", requiresCooking: true,
     waterNeed: "high", energyNeed: "medium",
@@ -1544,6 +1566,7 @@ const LOCAL_FOOD_DB = {
   },
   "spaghetti": {
     label: "Spaghetti",
+    labelDE: "Spaghetti",
     aliases: ["spaghetti","spaghettis","spaghetto","spaghetti nudeln","spaghetti pasta"],
     category: "cereale", state: "dry", requiresCooking: true,
     waterNeed: "high", energyNeed: "medium", generic: [],
@@ -1551,6 +1574,7 @@ const LOCAL_FOOD_DB = {
   },
   "penne": {
     label: "Penne",
+    labelDE: "Penne",
     aliases: ["penne","penne rigate","penne nudeln","penne pasta",
               "pene","pene nudeln","penné","nudeln penne","pasta penne","penne secs","penne trocken"],
     category: "cereale", state: "dry", requiresCooking: true,
@@ -1592,6 +1616,7 @@ const LOCAL_FOOD_DB = {
   },
   "reisbandnudeln": {
     label: "Reisbandnudeln (nouilles de riz)",
+    labelDE: "Reisbandnudeln",
     aliases: ["reisbandnudeln","reis band nudeln","reis-bandnudeln","reisnudeln",
               "nouilles de riz","rice noodles","rice noodle","nouilles riz"],
     category: "cereale", state: "dry", requiresCooking: true,
@@ -1601,6 +1626,7 @@ const LOCAL_FOOD_DB = {
   },
   "glasnudeln": {
     label: "Glasnudeln (vermicelles de verre)",
+    labelDE: "Glasnudeln",
     aliases: ["glasnudeln","glas nudeln","glas-nudeln","glass noodles",
               "vermicelles de verre","nouilles de verre","cellophane noodles"],
     category: "cereale", state: "dry", requiresCooking: true,
@@ -1626,6 +1652,7 @@ const LOCAL_FOOD_DB = {
   },
   "farine_ble": {
     label: "Farine de blé",
+    labelDE: "Weizenmehl",
     aliases: ["farine de ble","farine blanche","weizenmehl","mehl","wheat flour","all-purpose flour","farine"],
     category: "cereale", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1634,6 +1661,7 @@ const LOCAL_FOOD_DB = {
   },
   "sarrasin": {
     label: "Sarrasin (Buchweizen)",
+    labelDE: "Buchweizen",
     aliases: ["sarrasin","ble noir","buchweizen","buckweizen","buckwheat","kasha"],
     category: "cereale", state: "dry", requiresCooking: true,
     waterNeed: "high", energyNeed: "medium", generic: [],
@@ -1706,6 +1734,7 @@ const LOCAL_FOOD_DB = {
   /* Entree generique : capte les termes vagues et force l'ambiguite */
   "pois_chiches_generique": {
     label: "Pois chiches",
+    labelDE: "Kichererbsen",
     aliases: ["pois chiches","kichererbsen","chickpeas"],
     category: "legumineuse", state: "dry", requiresCooking: true,
     waterNeed: "high", energyNeed: "medium",
@@ -1714,6 +1743,7 @@ const LOCAL_FOOD_DB = {
   },
   "haricots_rouges_secs": {
     label: "Haricots rouges (secs)",
+    labelDE: "Rote Bohnen (trocken)",
     aliases: ["haricots rouges secs","haricots rouges sec","rote bohnen trocken","dried kidney beans","kidney beans dry"],
     category: "legumineuse", state: "dry", requiresCooking: true,
     waterNeed: "high", energyNeed: "medium", generic: [],
@@ -1735,6 +1765,7 @@ const LOCAL_FOOD_DB = {
   },
   "haricots_generique": {
     label: "Haricots rouges",
+    labelDE: "Rote Bohnen",
     aliases: ["haricots rouges","rote bohnen","kidney beans","red kidney beans","haricots",
               "kidney bohnen","kidneybohnen"],
     category: "legumineuse", state: "dry", requiresCooking: true,
@@ -1746,6 +1777,7 @@ const LOCAL_FOOD_DB = {
   /* ---- PROTEINES ---- */
   "whey": {
     label: "Protéine whey",
+    labelDE: "Whey-Protein",
     aliases: ["whey","whey protein","whey-protein","proteine whey","molkenprotein","protein powder","eiweissulver"],
     category: "supplement", state: "instant", requiresCooking: false,
     waterNeed: "low", energyNeed: "none", generic: [],
@@ -1753,6 +1785,7 @@ const LOCAL_FOOD_DB = {
   },
   "beurre_arachide": {
     label: "Beurre d'arachide 100 %",
+    labelDE: "Erdnussmus 100 %",
     aliases: ["beurre arachide","beurre d arachide","beurre de cacahuete","beurre cacahuete",
               "erdnussbutter","erdnussmus","peanut butter","peanut",
               "peanut butter 100","100 erdnuss","100% erdnuss"],
@@ -1763,6 +1796,7 @@ const LOCAL_FOOD_DB = {
   },
   "pate_arachide_sucree": {
     label: "Pâte à tartiner aux arachides sucrée",
+    labelDE: "Gesüßter Erdnussaufstrich",
     aliases: ["pate a tartiner arachide","pate a tartiner aux arachides",
               "creme arachide","creme de cacahuete",
               "erdnusscreme","erdnuss creme",
@@ -1784,6 +1818,7 @@ const LOCAL_FOOD_DB = {
   },
   "huile_tournesol": {
     label: "Huile de tournesol",
+    labelDE: "Sonnenblumenöl",
     aliases: ["huile tournesol","huile de tournesol","sonnenblumenol","sunflower oil"],
     category: "huile", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1792,6 +1827,7 @@ const LOCAL_FOOD_DB = {
   },
   "huile_colza": {
     label: "Huile de colza",
+    labelDE: "Rapsöl",
     aliases: ["huile colza","huile de colza","rapsol","canola oil","rapeseed oil"],
     category: "huile", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1799,6 +1835,7 @@ const LOCAL_FOOD_DB = {
   },
   "huile_generique": {
     label: "Huile",
+    labelDE: "Öl",
     aliases: ["huile","ol","oil","speiseol"],
     category: "huile", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none",
@@ -1810,6 +1847,7 @@ const LOCAL_FOOD_DB = {
   /* ---- BASE ---- */
   "sel": {
     label: "Sel iodé",
+    labelDE: "Jodsalz",
     aliases: ["sel iode","jodsalz","sel","salz","iodized salt","table salt"],
     category: "condiment", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1818,6 +1856,7 @@ const LOCAL_FOOD_DB = {
   },
   "natron": {
     label: "Natron (bicarbonate de sodium)",
+    labelDE: "Natron",
     aliases: ["natron","bicarbonate de sodium","bicarbonate alimentaire",
               "bicarbonate","backnatron","speisenatron",
               "baking soda","sodium bicarbonate"],
@@ -1829,6 +1868,7 @@ const LOCAL_FOOD_DB = {
   },
   "sucre": {
     label: "Sucre blanc",
+    labelDE: "Weißzucker",
     aliases: ["sucre blanc","sucre","zucker","sugar","white sugar","granulated sugar","sucre raffine"],
     category: "base", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1837,6 +1877,7 @@ const LOCAL_FOOD_DB = {
   },
   "miel": {
     label: "Miel",
+    labelDE: "Honig",
     aliases: ["miel","honig","honey","raw honey"],
     category: "base", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1845,6 +1886,7 @@ const LOCAL_FOOD_DB = {
   },
   "sirop_erable": {
     label: "Sirop d'érable",
+    labelDE: "Ahornsirup",
     aliases: ["sirop erable","ahornsirup","maple syrup","pure maple syrup"],
     category: "base", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1853,6 +1895,7 @@ const LOCAL_FOOD_DB = {
   },
   "levure": {
     label: "Levure sèche",
+    labelDE: "Trockenhefe",
     aliases: ["levure seche","levure","trockenhefe","hefe","dry yeast","instant yeast","yeast"],
     category: "base", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1875,6 +1918,7 @@ const LOCAL_FOOD_DB = {
   },
   "concentre_tomates": {
     label: "Concentré de tomates",
+    labelDE: "Tomatenmark",
     aliases: ["concentre tomates","tomatenmark","tomato paste","double concentre","tomato concentrate"],
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1883,6 +1927,7 @@ const LOCAL_FOOD_DB = {
   },
   "chou_rouge": {
     label: "Chou rouge en conserve",
+    labelDE: "Rotkohl (Konserve)",
     aliases: ["chou rouge","chou rouge conserve","rotkohl","rotkohl dose","red cabbage"],
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1890,6 +1935,7 @@ const LOCAL_FOOD_DB = {
   },
   "cornichons": {
     label: "Cornichons",
+    labelDE: "Essiggurken",
     aliases: ["cornichons","cornichon","cornichons conserve","cornichons en conserve",
               "cornichons bocal","cornichons aigres doux",
               "gewurzgurken","gewürzgurken","saure gurken","essiggurken","gurken im glas",
@@ -1901,6 +1947,7 @@ const LOCAL_FOOD_DB = {
   },
   "sauce_curry": {
     label: "Sauce curry",
+    labelDE: "Currysauce",
     aliases: ["sauce curry","currysauce","curry sauce","indian curry","thai curry","thai currysauce"],
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1909,6 +1956,7 @@ const LOCAL_FOOD_DB = {
   },
   "sauce_paprika": {
     label: "Sauce paprika",
+    labelDE: "Paprikasauce",
     aliases: ["sauce paprika","paprikasauce","paprika sauce","red pepper sauce","sauce poivron"],
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1928,6 +1976,7 @@ const LOCAL_FOOD_DB = {
   },
   "galette_riz": {
     label: "Galette de riz / maïs (soufflé)",
+    labelDE: "Reiswaffeln",
     aliases: ["galette de riz","galette riz","riz souffle","galette mais","galette de mais",
               "reiswaffeln","maiswaffeln","rice cake","corn cake","rice cracker"],
     category: "cereale", state: "dry", requiresCooking: false,
@@ -1948,6 +1997,7 @@ const LOCAL_FOOD_DB = {
   },
   "abricots_seches": {
     label: "Abricots séchés",
+    labelDE: "Getrocknete Aprikosen",
     aliases: ["abricots seches","abricots sechés","abricots séchés","abricot sec","abricots secs",
               "soft aprikosen","soft-aprikosen","aprikosen getrocknet",
               "getrocknete aprikosen","trockenaprikosen",
@@ -1960,6 +2010,7 @@ const LOCAL_FOOD_DB = {
   },
   "abricots_generique": {
     label: "Abricots",
+    labelDE: "Aprikosen",
     aliases: ["abricots","abricot","aprikosen","aprikose","apricots","apricot"],
     category: "fruit", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none",
@@ -1968,6 +2019,7 @@ const LOCAL_FOOD_DB = {
   },
   "bananen_chips": {
     label: "Bananen chips (bananes séchées)",
+    labelDE: "Bananenchips",
     aliases: ["bananen chips","bananenchips","banana chips",
               "bananes sechees","bananes séchées",
               "banane sechee","banane séchée",
@@ -1980,6 +2032,7 @@ const LOCAL_FOOD_DB = {
   },
   "raisins_secs": {
     label: "Raisins secs",
+    labelDE: "Rosinen",
     aliases: ["raisins secs","raisin sec","raisins seches","raisins séchés",
               "rosinen","weinbeeren getrocknet","sultaninen","sultanas",
               "raisins","dried raisins","dried grapes"],
@@ -1991,6 +2044,7 @@ const LOCAL_FOOD_DB = {
   },
   "dattes": {
     label: "Dattes séchées",
+    labelDE: "Datteln (getrocknet)",
     aliases: ["dattes","datte","dattes sechees","dattes séchées",
               "datteln","getrocknete datteln","dried dates","dates"],
     category: "fruit", state: "dry", requiresCooking: false,
@@ -2001,6 +2055,7 @@ const LOCAL_FOOD_DB = {
   },
   "pruneaux": {
     label: "Pruneaux",
+    labelDE: "Pflaumen (getrocknet)",
     aliases: ["pruneaux","pruneau","prunes sechees","prunes séchées",
               "trockenpflaumen","getrocknete pflaumen",
               "dried plums","prunes"],
@@ -2012,6 +2067,7 @@ const LOCAL_FOOD_DB = {
   },
   "mangue_conserve": {
     label: "Mangue en conserve",
+    labelDE: "Mango (Konserve)",
     aliases: ["mangue conserve","mangue boite","mango dose","canned mango","mango chunks","mangue",
               "mango","mango frais","mangue fraiche","frische mango"],
     category: "fruit", state: "ready", requiresCooking: false,
@@ -2021,6 +2077,7 @@ const LOCAL_FOOD_DB = {
   },
   "cocktail_fruits_conserve": {
     label: "Cocktail de fruits en conserve",
+    labelDE: "Obstcocktail (Konserve)",
     aliases: [
       "cocktail de fruits","cocktail fruits","fruits en conserve",
       "salade de fruits en conserve","salade fruits conserve",
@@ -2039,6 +2096,7 @@ const LOCAL_FOOD_DB = {
   },
   "poire_conserve": {
     label: "Poire en conserve",
+    labelDE: "Birnen (Konserve)",
     aliases: ["poire conserve","poires boite","birnen dose","canned pears","pear halves","poire",
               "birne","birnen","birne dose","pear","pears"],
     category: "fruit", state: "ready", requiresCooking: false,
@@ -2047,6 +2105,7 @@ const LOCAL_FOOD_DB = {
   },
   "ananas_conserve": {
     label: "Ananas en conserve",
+    labelDE: "Ananas (Konserve)",
     aliases: ["ananas conserve","ananas boite","ananas dose","canned pineapple","pineapple chunks","ananas",
               "ananas frais","frische ananas","fresh pineapple","pineapple"],
     category: "fruit", state: "ready", requiresCooking: false,
@@ -2056,6 +2115,7 @@ const LOCAL_FOOD_DB = {
   },
   "mandarines_conserve": {
     label: "Mandarines en conserve",
+    labelDE: "Mandarinen (Konserve)",
     aliases: ["mandarinen","mandarien","mandarinen dose","mandarinen in dosen","mandarinen glas",
               "mandarinen im glas","mandarinen in saft","mandarinen in sirup",
               "mandarine","mandarines","mandarines conserve","mandarines en conserve",
@@ -2067,6 +2127,7 @@ const LOCAL_FOOD_DB = {
   },
   "jus_citron": {
     label: "Jus de citron",
+    labelDE: "Zitronensaft",
     aliases: ["jus citron","jus de citron","zitronensaft","lemon juice","citron presse"],
     category: "fruit", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2075,6 +2136,7 @@ const LOCAL_FOOD_DB = {
   },
   "jus_carotte": {
     label: "Jus de carotte",
+    labelDE: "Karottensaft",
     aliases: ["jus carotte","jus de carotte","karottensaft","carrot juice","mohrrensaft"],
     category: "fruit", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2082,6 +2144,7 @@ const LOCAL_FOOD_DB = {
   },
   "framboises_conserve_sucrees": {
     label: "Framboises en conserve légèrement sucrées",
+    labelDE: "Himbeeren (Konserve, leicht gezuckert)",
     aliases: ["framboises conserve","framboises en conserve","framboises sucrees",
               "framboises legerement sucrees","framboises au sirop",
               "himbeeren dose","himbeeren glas","himbeeren in traubensuesse",
@@ -2094,6 +2157,7 @@ const LOCAL_FOOD_DB = {
   },
   "abricots_conserve_traubensuesse": {
     label: "Abricots en conserve (Traubensüße)",
+    labelDE: "Aprikosen (Konserve, Traubensüße)",
     aliases: ["abricots conserve","abricots en conserve","abricots au sirop",
               "abricots in traubensuesse","abricots in traubensüße",
               "aprikosen dose","aprikosen glas","aprikosen in traubensuesse",
@@ -2106,6 +2170,7 @@ const LOCAL_FOOD_DB = {
   },
   "multivitamines_vivede_brause": {
     label: "Multivitamines Vivede (Brausetabletten)",
+    labelDE: "Multivitamine Vivede (Brausetabletten)",
     aliases: ["vivede multivitamin","vivede multivitamine","vivede multivitamines",
               "vivede brause","vivede brausetabletten",
               "vivede multivitamin brausetabletten",
@@ -2118,6 +2183,7 @@ const LOCAL_FOOD_DB = {
   },
   "multivitamines_mivolis_brause": {
     label: "Multivitamines Mivolis (Brausetabletten)",
+    labelDE: "Multivitamine Mivolis (Brausetabletten)",
     aliases: ["mivolis multivitamin","mivolis multivitamine","mivolis multivitamines",
               "mivolis brause","mivolis brausetabletten",
               "mivolis multivitamin brausetabletten",
@@ -2129,6 +2195,7 @@ const LOCAL_FOOD_DB = {
   },
   "multivitamines": {
     label: "Multivitamines",
+    labelDE: "Multivitamine",
     aliases: ["multivitamines","multivitamin","vitamin","vitamine","vitamines","supplements",
               "brausetabletten","brause tabletten","multivitamin brausetabletten",
               "multivitamine brausetabletten","multivitamines brausetabletten",
@@ -2141,6 +2208,7 @@ const LOCAL_FOOD_DB = {
   },
   "pate_chocolat": {
     label: "Pâte à tartiner chocolat-noisette",
+    labelDE: "Nuss-Nougat-Creme",
     aliases: ["pate a tartiner","pate tartiner","pate tartiner chocolat","nuss nougat creme","nussnougatcreme",
               "nuss nougat","pate noisette","chocolate hazelnut spread","hazelnut spread","nutella","haselnusskrem"],
     category: "base", state: "ready", requiresCooking: false,
@@ -2149,6 +2217,7 @@ const LOCAL_FOOD_DB = {
   },
   "crackers": {
     label: "Crackers",
+    labelDE: "Crackers",
     aliases: ["crackers","crackers sales","salzcracker","knacker","salted crackers","crackers biscuits"],
     category: "cereale", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2156,6 +2225,7 @@ const LOCAL_FOOD_DB = {
   },
   "pain_croustillant": {
     label: "Pain croustillant (knäckebrot)",
+    labelDE: "Knäckebrot",
     aliases: ["pain croustillant","knackebrot","knäckebrot","knacke","wasa","crispbread",
               "ryvita","pain scandinave","knackebrot vollkorn","vollkornknacke"],
     category: "cereale", state: "ready", requiresCooking: false,
@@ -2164,6 +2234,7 @@ const LOCAL_FOOD_DB = {
   },
   "biscottes": {
     label: "Biscottes",
+    labelDE: "Zwieback",
     aliases: ["biscottes","zwieback","rusk","biscotte"],
     category: "cereale", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2171,6 +2242,7 @@ const LOCAL_FOOD_DB = {
   },
   "pumpernickel": {
     label: "Pumpernickel (pain de seigle complet)",
+    labelDE: "Pumpernickel",
     aliases: ["pumpernickel","pumpernickelbrot",
               "pumpernickelbrot aus roggenvollkornschrot",
               "roggenvollkornschrot","roggenvollkornbrot",
@@ -2184,6 +2256,7 @@ const LOCAL_FOOD_DB = {
   },
   "schoko_balls": {
     label: "Schoko Balls (céréales chocolatées)",
+    labelDE: "Schokobällchen (Frühstückscerealien)",
     aliases: [
       "schoko balls","schokoballs","schoko-balls",
       "enerbio schoko balls","enerbio schokoballs",
@@ -2200,6 +2273,7 @@ const LOCAL_FOOD_DB = {
   },
   "chocolat_noir": {
     label: "Chocolat noir",
+    labelDE: "Dunkle Schokolade",
     aliases: ["chocolat noir","dunkle schokolade","dark chocolate","zartbitterschokolade","chocolat"],
     category: "base", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2207,6 +2281,7 @@ const LOCAL_FOOD_DB = {
   },
   "chocolat_lait": {
     label: "Chocolat au lait",
+    labelDE: "Vollmilchschokolade",
     aliases: ["chocolat au lait","chocolat lait","milchschokolade","vollmilchschokolade",
               "milk chocolate","tablette chocolat au lait"],
     category: "base", state: "ready", requiresCooking: false,
@@ -2216,6 +2291,7 @@ const LOCAL_FOOD_DB = {
   },
   "confiture": {
     label: "Confiture",
+    labelDE: "Konfitüre",
     aliases: ["confiture","marmelade","jam","fruchtaufstrich","fruchtmarmelade",
               "konfiture","konfitüre"],
     category: "base", state: "ready", requiresCooking: false,
@@ -2225,6 +2301,7 @@ const LOCAL_FOOD_DB = {
   },
   "confiture_fraises": {
     label: "Confiture de fraises",
+    labelDE: "Erdbeermarmelade",
     aliases: ["confiture fraises","confiture de fraises","confiture aux fraises",
               "erdbeermarmelade","erdbeer konfiture","erdbeer konfitüre","erdbeerkonfitüre",
               "strawberry jam","fraise confiture","fraises confiture"],
@@ -2235,6 +2312,7 @@ const LOCAL_FOOD_DB = {
   },
   "confiture_framboises": {
     label: "Confiture de framboises",
+    labelDE: "Himbeermarmelade",
     aliases: ["confiture framboises","confiture de framboises","himbeermarmelade",
               "himbeerkonfitüre","himbeere konfiture","raspberry jam"],
     category: "base", state: "ready", requiresCooking: false,
@@ -2244,6 +2322,7 @@ const LOCAL_FOOD_DB = {
   },
   "confiture_abricots": {
     label: "Confiture d'abricots",
+    labelDE: "Aprikosenmarmelade",
     aliases: ["confiture abricots","confiture d abricots","aprikosenmarmelade",
               "aprikosenkonfitüre","aprikose konfiture","apricot jam"],
     category: "base", state: "ready", requiresCooking: false,
@@ -2253,6 +2332,7 @@ const LOCAL_FOOD_DB = {
   },
   "confiture_cerises": {
     label: "Confiture de cerises",
+    labelDE: "Kirschmarmelade",
     aliases: ["confiture cerises","confiture de cerises","kirschmarmelade",
               "kirschkonfitüre","kirsche konfiture","cherry jam","cerises sucrees"],
     category: "base", state: "ready", requiresCooking: false,
@@ -2262,6 +2342,7 @@ const LOCAL_FOOD_DB = {
   },
   "confiture_myrtilles": {
     label: "Confiture de myrtilles",
+    labelDE: "Heidelbeermarmelade",
     aliases: ["confiture myrtilles","confiture de myrtilles","blaubeermarmelade",
               "heidelbeermarmelade","heidelbeerkonfitüre","blueberry jam"],
     category: "base", state: "ready", requiresCooking: false,
@@ -2271,6 +2352,7 @@ const LOCAL_FOOD_DB = {
   },
   "confiture_prunes": {
     label: "Confiture de prunes",
+    labelDE: "Pflaumenmarmelade",
     aliases: ["confiture prunes","confiture de prunes","zwetschgenmarmelade",
               "pflaumenmarmelade","pflaumen konfiture","plum jam"],
     category: "base", state: "ready", requiresCooking: false,
@@ -2280,6 +2362,7 @@ const LOCAL_FOOD_DB = {
   },
   "lait_concentre_sucre": {
     label: "Lait concentré sucré",
+    labelDE: "Gezuckerte Kondensmilch",
     aliases: ["lait concentre sucre","gezuckerte kondensmilch","sweetened condensed milk","condensed milk"],
     category: "base", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2312,6 +2395,7 @@ const LOCAL_FOOD_DB = {
   },
   "tofu": {
     label: "Tofu",
+    labelDE: "Tofu",
     aliases: ["tofu","tofu ferme","tofu longue conservation","tofu nature","tofu lacte",
               "firm tofu","silken tofu","soja tofu","sojatofu"],
     category: "legumineuse", state: "ready", requiresCooking: false,
@@ -2330,6 +2414,7 @@ const LOCAL_FOOD_DB = {
   },
   "lait_generique": {
     label: "Lait",
+    labelDE: "Milch",
     aliases: ["lait","milch","milk"],
     category: "base", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none",
@@ -2338,6 +2423,7 @@ const LOCAL_FOOD_DB = {
   },
   "lait_poudre": {
     label: "Lait en poudre",
+    labelDE: "Milchpulver",
     aliases: ["lait en poudre","lait poudre","milchpulver","powdered milk","dried milk","milk powder"],
     category: "base", state: "dry", requiresCooking: false,
     waterNeed: "low", energyNeed: "none", generic: [],
@@ -2347,6 +2433,7 @@ const LOCAL_FOOD_DB = {
   /* ---- C. FETTE / OMEGA / DICHTE ---- */
   "noix": {
     label: "Noix de Grenoble",
+    labelDE: "Walnüsse",
     aliases: ["noix","noix de grenoble","walnuss","walnusse","walnüsse","walnuss","walnuts","walnut",
               "walnusskerne","walnusskern","alesto walnusskerne"],
     category: "nuts", state: "dry", requiresCooking: false,
@@ -2356,6 +2443,7 @@ const LOCAL_FOOD_DB = {
   },
   "amandes": {
     label: "Amandes",
+    labelDE: "Mandeln",
     aliases: ["amandes","amande","mandeln","almonds","almond"],
     category: "supplement", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2363,6 +2451,7 @@ const LOCAL_FOOD_DB = {
   },
   "nuts_royal": {
     label: "Mélange de noix",
+    labelDE: "Nussmischung",
     aliases: ["nuts royal","nussmix","mischung nuesse","mischung nussen","mixed nuts",
               "melange noix","mélange noix","mix noix","alesto nuts royal",
               "cashew walnuss haselnuss"],
@@ -2373,6 +2462,7 @@ const LOCAL_FOOD_DB = {
   },
   "graines_tournesol": {
     label: "Graines de tournesol",
+    labelDE: "Sonnenblumenkerne",
     aliases: ["graines tournesol","graines de tournesol","sonnenblumenkerne",
               "sonnenblumenkerne geschaelt","sonnenblumenkerne geschält",
               "sunflower seeds","shelled sunflower seeds",
@@ -2384,6 +2474,7 @@ const LOCAL_FOOD_DB = {
   },
   "skyr_nature": {
     label: "Skyr nature",
+    labelDE: "Skyr Natur",
     aliases: ["skyr","skyr nature","schrozberger skyr","schrozberger milchbauern skyr",
               "demeter skyr","skyr natur","skyr wenig fett","skyr proteine",
               "skyr protein","skyr bio","yaourt skyr",
@@ -2400,6 +2491,7 @@ const LOCAL_FOOD_DB = {
   },
   "graines_lin": {
     label: "Graines de lin",
+    labelDE: "Leinsamen",
     aliases: ["graines de lin","graines lin","leinsamen","flaxseed","flax seeds","linseed"],
     category: "supplement", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2407,6 +2499,7 @@ const LOCAL_FOOD_DB = {
   },
   "graines_chia": {
     label: "Graines de chia",
+    labelDE: "Chiasamen",
     aliases: ["graines chia","graines de chia","chiasamen","chia seeds","chia"],
     category: "supplement", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2414,6 +2507,7 @@ const LOCAL_FOOD_DB = {
   },
   "huile_algues": {
     label: "Huile d'algues",
+    labelDE: "Algenöl",
     aliases: ["huile algues","huile d algues","algenol","algenöl","algae oil","omega 3 algues","dha algues"],
     category: "huile", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2423,6 +2517,7 @@ const LOCAL_FOOD_DB = {
   /* ---- D. BASE DOMESTIQUE COURANTE ---- */
   "couscous": {
     label: "Couscous",
+    labelDE: "Couscous",
     aliases: ["couscous","couscouss","couscous sec","couscous precuit"],
     category: "cereale", state: "dry", requiresCooking: true,
     waterNeed: "low", energyNeed: "medium", generic: [],
@@ -2430,6 +2525,7 @@ const LOCAL_FOOD_DB = {
   },
   "semoule": {
     label: "Semoule",
+    labelDE: "Grieß",
     aliases: ["semoule","grieß","semolina","semolino","gries"],
     category: "cereale", state: "dry", requiresCooking: true,
     waterNeed: "medium", energyNeed: "medium", generic: [],
@@ -2437,6 +2533,7 @@ const LOCAL_FOOD_DB = {
   },
   "puree_instantanee": {
     label: "Purée instantanée",
+    labelDE: "Instantkartoffelpüree",
     aliases: ["puree instantanee","puree en flocons","puree flocons","flocons pomme de terre",
               "instantpuree","kartoffelpuree","kartoffelpüree","mashed potato powder",
               "instant mashed potato","potato flakes"],
@@ -2446,6 +2543,7 @@ const LOCAL_FOOD_DB = {
   },
   "bouillon_cube": {
     label: "Bouillon cube",
+    labelDE: "Brühwürfel",
     aliases: ["bouillon cube","bouillon","cube bouillon","bruhwurfel","brühwürfel","brühe",
               "stock cube","vegetable stock","chicken stock","bouillon de legumes",
               "bouillon de volaille","gemüsebrühe","hühnerbrühe"],
@@ -2455,6 +2553,7 @@ const LOCAL_FOOD_DB = {
   },
   "cafe": {
     label: "Café",
+    labelDE: "Kaffee",
     aliases: ["cafe","kaffee","coffee","cafe moulu","cafe instantane","ground coffee",
               "espresso","instant coffee","loslicher kaffee","loskaffee","nescafe"],
     category: "condiment", state: "dry", requiresCooking: false,
@@ -2464,6 +2563,7 @@ const LOCAL_FOOD_DB = {
   },
   "the": {
     label: "Thé",
+    labelDE: "Tee",
     aliases: ["the","tee","tea","the vert","green tea","the noir","black tea","thee",
               "grun tee","gruner tee","schwarzer tee","herbal tea","tisane","infusion",
               "pfefferminztee","kamillentee","kräutertee"],
@@ -2474,6 +2574,7 @@ const LOCAL_FOOD_DB = {
   },
   "backpulver": {
     label: "Levure chimique (Backpulver)",
+    labelDE: "Backpulver",
     aliases: ["backpulver","levure chimique","poudre a lever","baking powder","levure","lievito"],
     category: "condiment", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2481,6 +2582,7 @@ const LOCAL_FOOD_DB = {
   },
   "levure_seche": {
     label: "Levure sèche (Trockenhefe)",
+    labelDE: "Trockenhefe",
     aliases: ["trockenhefe","hefepulver","hefe trocken","dry yeast","active dry yeast",
               "levure seche","levure sèche","levure boulanger seche","levure boulangere"],
     category: "base", state: "dry", requiresCooking: true,
@@ -2490,6 +2592,7 @@ const LOCAL_FOOD_DB = {
   },
   "lait_coco": {
     label: "Lait de coco",
+    labelDE: "Kokosmilch",
     aliases: ["lait de coco","lait coco","kokosmilch","coconut milk","coconut cream"],
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2498,6 +2601,7 @@ const LOCAL_FOOD_DB = {
   /* ---- KEIMSPROSSEN ---- */
   "graines_alfalfa": {
     label: "Graines d'alfalfa (pousses)",
+    labelDE: "Alfalfasamen (Sprossen)",
     aliases: ["alfalfa","luzerne","alfalfa sprossen","alfalfasamen",
               "graines alfalfa","graines de luzerne"],
     category: "germination", state: "dry", requiresCooking: false,
@@ -2511,6 +2615,7 @@ const LOCAL_FOOD_DB = {
   },
   "graines_kresse": {
     label: "Graines de kresse (pousses)",
+    labelDE: "Kressesamen (Sprossen)",
     aliases: ["kresse","cresson","cress","kressesamen","gartenkresse","graines de cresson"],
     category: "germination", state: "dry", requiresCooking: false,
     waterNeed: "medium", energyNeed: "none", generic: [],
@@ -2523,6 +2628,7 @@ const LOCAL_FOOD_DB = {
   },
   "graines_mungbohnen": {
     label: "Graines de mungbohnen (pousses)",
+    labelDE: "Mungbohnensamen (Sprossen)",
     aliases: ["mungbohnen","mung bohnen","haricots mungo","graines mungo",
               "mung beans","mung bean sprouts","mungo"],
     category: "germination", state: "dry", requiresCooking: false,
@@ -2536,6 +2642,7 @@ const LOCAL_FOOD_DB = {
   },
   "graines_sprossen_mix": {
     label: "Sprossen-Mix (mélange pousses)",
+    labelDE: "Sprossenmischung",
     aliases: ["sprossen mix","sprossen-mix","mix pousses","melange pousses",
               "mélange pousses","sprouting mix","keimsaat mix"],
     category: "germination", state: "dry", requiresCooking: false,
@@ -2549,6 +2656,7 @@ const LOCAL_FOOD_DB = {
   },
   "graines_bockshornklee": {
     label: "Graines de bockshornklee (fenugrec)",
+    labelDE: "Bockshornkleesamen",
     aliases: ["bockshornklee","fenugrec","fenugreek","graines de fenugrec",
               "bockshornkleesamen"],
     category: "germination", state: "dry", requiresCooking: false,
@@ -2562,6 +2670,7 @@ const LOCAL_FOOD_DB = {
   },
   "olives": {
     label: "Olives en conserve",
+    labelDE: "Oliven (Konserve)",
     aliases: ["olives","olives vertes","olives noires","olives conserve","olives bocal",
               "oliven","grune oliven","grüne oliven","schwarze oliven","olives jar","canned olives",
               "olive verte","olive noire","olives marinées","olives marinees"],
@@ -2572,6 +2681,7 @@ const LOCAL_FOOD_DB = {
   },
   "huile_coco": {
     label: "Huile de coco",
+    labelDE: "Kokosöl",
     aliases: ["huile de coco","huile coco","kokosol","kokosöl","coconut oil","kokosfett"],
     category: "huile", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2580,6 +2690,7 @@ const LOCAL_FOOD_DB = {
   },
   "cerises_conserve": {
     label: "Cerises en conserve",
+    labelDE: "Kirschen (Konserve)",
     aliases: ["cerises conserve","cerises en conserve","cerises au sirop","cerises",
               "kirschen dose","kirschen glas","sauerkirschen glas","sauerkirschen dose",
               "canned cherries","cherry conserve","kirschen","cherries"],
@@ -2590,6 +2701,7 @@ const LOCAL_FOOD_DB = {
   },
   "edamame_conserve": {
     label: "Edamame en conserve",
+    labelDE: "Edamame (Konserve)",
     aliases: ["edamame","edamame conserve","edamame en conserve","feves edamame",
               "edamame dose","edamame bohnen","canned edamame","soybeans canned",
               "soja edamame","haricots soja"],
@@ -2600,6 +2712,7 @@ const LOCAL_FOOD_DB = {
   },
   "pois_casses": {
     label: "Pois cassés",
+    labelDE: "Erbsen (getrocknet)",
     aliases: ["pois casses","pois cassés","erbsen","split peas","yellow split peas","green split peas"],
     category: "legumineuse", state: "dry", requiresCooking: true,
     waterNeed: "high", energyNeed: "medium", generic: [],
@@ -2607,6 +2720,7 @@ const LOCAL_FOOD_DB = {
   },
   "haricots_blancs": {
     label: "Haricots blancs (cuits)",
+    labelDE: "Weiße Bohnen (gegart)",
     aliases: ["haricots blancs","haricots blancs cuits","haricots blancs conserve","haricots blancs boite",
               "haricots cocos","haricots lingots","flageolets","cassoulet haricots",
               "weisse bohnen","weisse bohnen dose","cannellini","cannellini beans",
@@ -2629,6 +2743,7 @@ const LOCAL_FOOD_DB = {
   },
   "betteraves_rouges_conserve": {
     label: "Betteraves rouges en conserve",
+    labelDE: "Rote Bete (Konserve)",
     aliases: ["rote bete","rote beete","rote bete glas","rote beete glas",
               "rote bete im glas","rote beete im glas","rote bete dose","rote beete dose",
               "rote bete in scheiben","rote beete in scheiben",
@@ -2644,6 +2759,7 @@ const LOCAL_FOOD_DB = {
   /* ---- Neue Produkte aus realem Inventar ---- */
   "haferdrink_konzentrat": {
     label: "Concentré de boisson d'avoine",
+    labelDE: "Haferdrink-Konzentrat",
     aliases: ["haferdrink konzentrat","haferdrink konzentrat","concentre avoine","boisson avoine concentree",
               "oat drink concentrate","hafermilch konzentrat","avoine concentre"],
     category: "base", state: "dry", requiresCooking: false,
@@ -2652,6 +2768,7 @@ const LOCAL_FOOD_DB = {
   },
   "sojamilch": {
     label: "Boisson de soja (sojamilch)",
+    labelDE: "Sojamilch",
     aliases: ["sojamilch","boisson soja","lait soja","lait de soja","sojadrink",
               "soy milk","soya milk","soja drink","soja lait","soja milch","soja-milch",
               "sojamilch natur","soja milch natur","soja-milch natur",
@@ -2664,6 +2781,7 @@ const LOCAL_FOOD_DB = {
   },
   "haferdrink": {
     label: "Boisson d'avoine",
+    labelDE: "Haferdrink",
     aliases: ["boisson avoine","boisson d avoine","lait avoine","lait d avoine",
               "haferdrink","hafer drink","hafermilch","hafer milch","oat milk","oat drink"],
     category: "base", state: "liquid", requiresCooking: false,
@@ -2673,6 +2791,7 @@ const LOCAL_FOOD_DB = {
   },
   "mandeldrink": {
     label: "Boisson d'amande",
+    labelDE: "Mandeldrink",
     aliases: ["boisson amande","boisson d amande","lait amande","lait d amande",
               "mandeldrink","mandel drink","mandelmilch","mandel milch","almond milk","almond drink"],
     category: "base", state: "liquid", requiresCooking: false,
@@ -2682,6 +2801,7 @@ const LOCAL_FOOD_DB = {
   },
   "reisdrink": {
     label: "Boisson de riz",
+    labelDE: "Reisdrink",
     aliases: ["boisson riz","boisson de riz","lait riz","lait de riz",
               "reisdrink","reis drink","reismilch","reis milch","rice milk","rice drink"],
     category: "base", state: "liquid", requiresCooking: false,
@@ -2691,6 +2811,7 @@ const LOCAL_FOOD_DB = {
   },
   "lait_evapore": {
     label: "Lait évaporé non sucré",
+    labelDE: "Ungesüßte Kondensmilch",
     aliases: ["lait evapore","lait évaporé","lait concentre non sucre","lait concentré non sucré",
               "kondensmilch","kondensmilch ungezuckert","ungesuesste kondensmilch",
               "ungesusste kondensmilch","evaporated milk","unsweetened condensed milk"],
@@ -2712,6 +2833,7 @@ const LOCAL_FOOD_DB = {
   },
   "sauerkraut": {
     label: "Choucroute (sauerkraut)",
+    labelDE: "Sauerkraut",
     aliases: ["sauerkraut","choucroute","choucroute cuite","choucroute conserve","choucroute bocal",
               "sauerkraut dose","fermented cabbage","chou fermente","weisskohlkraut"],
     category: "conserve", state: "ready", requiresCooking: false,
@@ -2721,6 +2843,7 @@ const LOCAL_FOOD_DB = {
   /* ---- SNACKS SECS ---- */
   "salzstangen": {
     label: "Bâtonnets salés (Salzstangen)",
+    labelDE: "Salzstangen",
     aliases: ["salzstangen","salzstange","salt sticks","pretzel sticks",
               "batonnets sales","bâtonnets salés","laugenstangen"],
     category: "snack", state: "dry", requiresCooking: false,
@@ -2730,6 +2853,7 @@ const LOCAL_FOOD_DB = {
   },
   "mini_brezel": {
     label: "Mini bretzels",
+    labelDE: "Mini-Brezeln",
     aliases: ["mini brezel","mini brezeln","mini bretzels","mini bretzel",
               "brezel","brezeln","bretzel","pretzels","mini pretzels","laugenbrezel"],
     category: "snack", state: "dry", requiresCooking: false,
@@ -2739,6 +2863,7 @@ const LOCAL_FOOD_DB = {
   },
   "karottensalat": {
     label: "Salade de carottes (préparée)",
+    labelDE: "Karottensalat (zubereitet)",
     aliases: ["karottensalat","salade carotte","salade de carottes","carrot salad",
               "carottes rapees","carotte salade","mohrenalat","mohrensalat"],
     category: "conserve", state: "ready", requiresCooking: false,
@@ -2746,28 +2871,25 @@ const LOCAL_FOOD_DB = {
     nutrition: { kcal:580, protein:10, carbs:120, fat:20 },
   },
   "linsen_gemuese_topf": {
-    label: "Plat lentilles-légumes (conserve)", labelDE: "Linsen-Gemüse-Eintopf (Konserve)",
-    aliases: ["linsen gemuese topf","linsen gemuse topf","linsengemüsetopf","lentilles legumes conserve",
-              "plat lentilles legumes","lentil vegetable stew","lentilles legumes pot",
-              "linsen topf","linsentopf gemuse","soupe lentilles legumes",
-              "lentilles legumes","lentilles aux legumes","lentilles cuisinees",
-              "lentilles en sauce","linsen mit gemuse","lentilles preparees"],
+    label: "Plat lentilles-légumes (conserve)", labelDE: "Linseneintopf vegetarisch",
+    aliases: [
+      "linseneintopf","linsentopf","linsen topf","linsen eintopf","linsen-eintopf",
+      "eintopf linsen","linsensuppe","linsen gemuese topf","linsen gemuse topf",
+      "linsengemüsetopf","linsen topf gemuse","linsentopf gemuse","linsen mit gemuse",
+      "linseneintopf vegetarisch","lentilles legumes conserve","plat lentilles legumes",
+      "lentil vegetable stew","lentilles legumes pot","soupe lentilles legumes",
+      "lentilles legumes","lentilles aux legumes","lentilles cuisinees",
+      "lentilles en sauce","lentilles preparees","soupe lentilles","ragout lentilles",
+      "lentil soup","lentil stew","lentilles soupe","lentilles ragout","lentil eintopf"
+    ],
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
-    nutrition: { kcal:720, protein:60, carbs:110, fat:15 },
-  },
-  "linsentopf": {
-    label: "Soupe/ragoût de lentilles (conserve)", labelDE: "Linseneintopf / Linsensuppe (Konserve)",
-    aliases: ["linsentopf","linsen topf","soupe lentilles","ragout lentilles","lentil soup",
-              "lentil stew","lentilles soupe","lentilles ragout","linsensuppe",
-              "linseneintopf","linsen eintopf","linsen-eintopf","eintopf linsen","lentil eintopf"],
-    category: "conserve", state: "ready", requiresCooking: false,
-    waterNeed: "none", energyNeed: "none", generic: [],
-    nutrition: { kcal:780, protein:65, carbs:115, fat:18 },
+    nutrition: { kcal:750, protein:62, carbs:112, fat:16 },
     openedLifeCold: "2–3 jours", openedLifeNoCold: "1 jour",
   },
   "tomates_des_conserve": {
     label: "Tomates en dés",
+    labelDE: "Tomaten in Würfeln (Konserve)",
     aliases: ["tomates en des","tomates en dés","tomates concassees","tomates concassées",
               "tomates morceaux","tomates en morceaux",
               "stuckige tomaten","stückige tomaten","tomaten stuecke","tomatenstücke",
@@ -2792,6 +2914,7 @@ const LOCAL_FOOD_DB = {
   },
   "champignons_conserve": {
     label: "Champignons en conserve",
+    labelDE: "Champignons (Konserve)",
     aliases: ["champignons en conserve","champignons conserve","champignons boite",
               "champignons boîte","champignons eminces","champignons émincés",
               "champignons de paris conserve",
@@ -2805,6 +2928,7 @@ const LOCAL_FOOD_DB = {
   },
   "ravioli_conserve": {
     label: "Ravioli en conserve",
+    labelDE: "Ravioli (Konserve)",
     aliases: ["ravioli en conserve","ravioli conserve","ravioli boite",
               "ravioli boîte","dosenravioli","ravioli dose",
               "ravioli in der dose","ravioli mit tomatensauce",
@@ -2830,6 +2954,7 @@ const LOCAL_FOOD_DB = {
   },
   "babyspinat": {
     label: "Jeunes pousses d'épinard",
+    labelDE: "Babyspinat",
     aliases: ["babyspinat","baby spinat","spinat","epinard frais","épinard frais",
               "epinards frais","épinards frais","jeunes pousses epinard",
               "jeunes pousses d epinard","fresh spinach","edeka babyspinat","bio babyspinat"],
@@ -2840,6 +2965,7 @@ const LOCAL_FOOD_DB = {
   },
   "rucola": {
     label: "Roquette",
+    labelDE: "Rucola",
     aliases: ["rucola","roquette","arugula","rocket salad","rauke","edeka rucola","bio rucola"],
     category: "legume", state: "fresh", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2848,6 +2974,7 @@ const LOCAL_FOOD_DB = {
   },
   "salatmix_blueten": {
     label: "Mélange de salades avec fleurs",
+    labelDE: "Salatmischung mit Blüten",
     aliases: ["salatmix mit blueten","salatmix mit blüten","salatmix blueten","salatmix blüten",
               "salatmix","salat mix","melange salade fleurs","mélange salade fleurs",
               "salade avec fleurs","herzstucke salatmix","herzstücke salatmix","edeka salatmix"],
@@ -2858,6 +2985,7 @@ const LOCAL_FOOD_DB = {
   },
   "pamplemousse_frais": {
     label: "Pamplemousse frais",
+    labelDE: "Grapefruit (frisch)",
     aliases: ["pamplemousse","pamplemousse frais","grapefruit","fresh grapefruit",
               "grapefruit fresh","pomelo","pomelos","grapefruit bio"],
     category: "fruit", state: "fresh", requiresCooking: false,
@@ -2867,6 +2995,7 @@ const LOCAL_FOOD_DB = {
   },
   "tempeh_soja_bbq": {
     label: "Tempeh soja BBQ",
+    labelDE: "Tempeh Soja BBQ",
     aliases: ["tempeh soja bbq","soja tempeh bbq","tempehmanufaktur tempeh bbq","tempeh bbq","tempeh au soja barbecue"],
     category: "legumineuse", state: "fresh", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2875,6 +3004,7 @@ const LOCAL_FOOD_DB = {
   },
   "tempeh_lupin_sweet_chili": {
     label: "Tempeh lupin sweet chili",
+    labelDE: "Tempeh Lupinen Sweet Chili",
     aliases: ["tempeh lupin sweet chili","lupinen tempeh sweet chili","lupinen-tempeh sweet chili","tempeh aux lupins","tempeh lupinen"],
     category: "legumineuse", state: "fresh", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2883,6 +3013,7 @@ const LOCAL_FOOD_DB = {
   },
   "tortilla_chips_mexican": {
     label: "Tortilla chips Mexican Style",
+    labelDE: "Tortilla Chips Mexican Style",
     aliases: ["tortilla chips","mexican style tortilla chips","trafo tortilla chips","chips tortilla","mais chips","maischips"],
     category: "snack", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2891,6 +3022,7 @@ const LOCAL_FOOD_DB = {
   },
   "pesto_rosso": {
     label: "Pesto rosso",
+    labelDE: "Pesto Rosso",
     aliases: ["pesto rosso","zwergenwiese pesto rosso","pesto rouge","pesto tomate","pesto tomates sechees"],
     category: "condiment", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2899,6 +3031,7 @@ const LOCAL_FOOD_DB = {
   },
   "eistee_gruener_tee_matcha": {
     label: "Thé glacé vert matcha",
+    labelDE: "Grüner Eistee Matcha",
     aliases: ["fairer eistee","gruner tee matcha","grüner tee matcha","eistee matcha","voelkel fairer eistee","the glace matcha","thé glacé matcha"],
     category: "boisson", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2907,6 +3040,7 @@ const LOCAL_FOOD_DB = {
   },
   "gouda_holland_jeune": {
     label: "Gouda Holland jeune",
+    labelDE: "Junger Gouda Holland",
     aliases: ["gouda","gouda holland","gouda holland jung","gouda jung","gouda jeune",
               "fromage gouda","edeka gouda","gut und gunstig gouda","gut & gunstig gouda"],
     category: "laitage", state: "fresh", requiresCooking: false,
@@ -2916,6 +3050,7 @@ const LOCAL_FOOD_DB = {
   },
   "oeufs_moyens": {
     label: "Œufs moyens",
+    labelDE: "Eier (mittelgroß)",
     aliases: ["oeuf","oeufs","œuf","œufs","oeuf moyen","oeufs moyens","œuf moyen","œufs moyens",
               "eier","ei","mittelgrosse eier","mittelgroße eier",
               "eier m","m eier","bio eier","freilandeier"],
@@ -3113,8 +3248,8 @@ const FOOD_NAME_DE_MAP = {
   "Choucroute (sauerkraut)":     "Sauerkraut",
   "Choucroute":                  "Sauerkraut",
   // Fertiggerichte / Zubereitete Konserven
-  "Plat lentilles-légumes (conserve)": "Linsen-Gemüse-Eintopf (Konserve)",
-  "Soupe/ragoût de lentilles (conserve)": "Linseneintopf / Linsensuppe (Konserve)",
+  "Plat lentilles-légumes (conserve)": "Linseneintopf vegetarisch",
+  "Soupe/ragoût de lentilles (conserve)": "Linseneintopf vegetarisch",
   "Ravioli en conserve":         "Dosenravioli",
   "Champignons en conserve":     "Champignons (Konserve)",
   // Getreide / Nudeln / Stärkeprodukte
@@ -6114,10 +6249,15 @@ function toggleScanMode() { /* désactivé — mode scan toujours actif */ }
 function _showScanPreview(parsed) {
   _scanParsed = parsed;
   const $ = id => document.getElementById(id);
-  $("scan-name").textContent = parsed.name;
+  $("scan-name").textContent = parsed._displayName || parsed.name;
   $("scan-qty").textContent  = parsed.qty + " " + parsed.unit;
   $("scan-exp").textContent  = displayExpiry(parsed.expiry) || "kein Datum";
   $("scan-preview").style.display = "block";
+  // Adapter le libellé du bouton selon la certitude du match
+  const btn = $("scan-confirm-btn");
+  if (btn) btn.textContent = parsed._ambiguous
+    ? "Auswahl öffnen →"
+    : "✓ Bestätigen & weiter";
 }
 
 function scanCancel() {
@@ -6126,6 +6266,10 @@ function scanCancel() {
   if (p) p.style.display = "none";
   const fb = document.getElementById("quick-feedback");
   if (fb) { fb.textContent = ""; fb.className = "quick-entry-feedback"; }
+  setTimeout(() => {
+    const qi = document.getElementById("quick-input");
+    if (qi) { qi.value = ""; qi.focus(); }
+  }, 0);
 }
 
 async function scanConfirm() {
@@ -6216,8 +6360,24 @@ function analyzeQuickInput() {
   const details = document.querySelector(".classic-form-details");
 
   if (parsed && parsed.unit && parsed.name) {
+    // Résoudre le nom canonique dès la prévisualisation
+    const _qResult = getFoodDataSync(parsed.name);
+    const _displayName = (_qResult && _qResult.displayName)
+      ? _qResult.displayName
+      : parsed.name;
+    // Préremplir f-name avec le nom canonique (pas le texte brut)
+    const _canonicalName = _displayName;
+    // Simuler la recherche que addFoodItem fera avec _canonicalName
+    // (addFoodItem utilise f-name.value = _canonicalName, pas parsed.name)
+    const _qResultFinal = getFoodDataSync(_canonicalName);
+    // Détecter un match ambigu en se basant sur le résultat final
+    const _willOpenCandidates = (r) => !!(r && (
+      (r.data === null && r.matchType === "none" && r.candidates && r.candidates.length > 0) ||
+      (r.matchType === "partial" && r.candidates && r.candidates.length > 1)
+    ));
+    const _ambiguous = _willOpenCandidates(_qResultFinal) || _willOpenCandidates(_qResult);
     // Succès : pré-remplir les champs
-    document.getElementById("f-name").value = parsed.name;
+    document.getElementById("f-name").value = _canonicalName;
     document.getElementById("f-qty").value  = parsed.qty;
     document.getElementById("f-unit").value = parsed.unit;
     if (parsed.expiry) {
@@ -6233,14 +6393,14 @@ function analyzeQuickInput() {
     };
     checkPackageWarning();
     if (details && !_scanMode) details.open = true;
-    let msg = `✓ ${parsed.qty} ${parsed.unit} · ${parsed.name}`;
+    let msg = `✓ ${parsed.qty} ${parsed.unit} · ${_displayName}`;
     if (parsed.expiry) msg += ` · exp. ${displayExpiry(parsed.expiry)}`;
     feedback.textContent = msg;
     feedback.className   = "quick-entry-feedback ok";
     input.value = "";
-    // Mode scan : afficher l'aperçu de confirmation au lieu d'ouvrir la section classique
+    // Mode scan : afficher l'aperçu avec le nom canonique et l'état d'ambiguïté
     if (_scanMode) {
-      _showScanPreview(parsed);
+      _showScanPreview({ ...parsed, _displayName, _ambiguous });
     }
   } else if (parsed && !parsed.unit) {
     // Emballage sans poids réel — message précis selon le type de contenant
@@ -6960,6 +7120,8 @@ function commitFoodItem(pending, result) {
   renderManualList();
   renderTable();
   saveAppData();
+  localStorage.setItem("tenir_first_food_entry_de_done", "1");
+  _ffuDisable();
   setTimeout(() => setHint(""), 3000);
   if (_scanMode) focusQuickInputSoon();
 }
@@ -9432,10 +9594,7 @@ function detectSpeechSupport() {
 function renderSpeechStatus() {
   const el = document.getElementById("speech-status");
   if (!el) return;
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  el.textContent = SR
-    ? "🎤 Spracheingabe verfügbar — Mikrofon-Taste testen"
-    : "🎤 Spracheingabe nicht verfügbar — iOS-Tastatur-Mikrofon nutzen";
+  el.textContent = "🎤 iPhone-Diktat: Mikrofontaste auf der Tastatur (neben der Leertaste)";
 }
 
 function testMicrophone() {
@@ -10153,6 +10312,7 @@ function runAllVoiceFoodTests() {
 
 document.addEventListener("keydown",(e)=>{
   if(e.key!=="Enter"||document.activeElement.tagName!=="INPUT") return;
+  if(document.activeElement.id==="quick-input") return; // géré par onkeydown inline → analyzeQuickInput uniquement
   const a=document.querySelector(".panel.active").id;
   if(a==="panel-inv"   && !isSearchingFood) addFoodItem();
   if(a==="panel-water") addWaterItem();
@@ -10268,6 +10428,70 @@ if (!DEBUG_MODE) {
 
 
 <script>
+// ── Guidage premier ajout de produit ─────────────────────────────────────
+const FFU_KEY = "tenir_first_food_entry_de_done";
+
+function _ffuIsActive() { return !localStorage.getItem(FFU_KEY); }
+
+function _ffuShow(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add("visible");
+}
+function _ffuHide(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove("visible");
+}
+function _ffuDisable() {
+  _ffuHide("ffu-hint-location");
+  _ffuHide("ffu-hint-mic");
+  const qi = document.getElementById("quick-input");
+  if (qi) qi.classList.remove("ffu-active");
+}
+
+function initFirstFoodGuidance() {
+  if (!_ffuIsActive()) return;
+
+  const loc  = document.getElementById("session-location");
+  const qi   = document.getElementById("quick-input");
+  if (!loc || !qi) return;
+
+  // Montrer le hint Lageort + focus auto
+  _ffuShow("ffu-hint-location");
+  setTimeout(() => { try { loc.focus(); } catch(e){} }, 350);
+
+  // Quand l'utilisateur quitte Lageort → focus quick-input + hint micro
+  function onLocBlur() {
+    if (!_ffuIsActive()) return;
+    _ffuHide("ffu-hint-location");
+    _ffuShow("ffu-hint-mic");
+    qi.classList.add("ffu-active");
+    setTimeout(() => { try { qi.focus(); } catch(e){} }, 80);
+    loc.removeEventListener("blur", onLocBlur);
+  }
+  loc.addEventListener("blur", onLocBlur);
+
+  // Si l'utilisateur clique directement sur quick-input
+  qi.addEventListener("focus", function onQiFocus() {
+    if (!_ffuIsActive()) return;
+    _ffuHide("ffu-hint-location");
+    _ffuShow("ffu-hint-mic");
+    qi.classList.add("ffu-active");
+    qi.removeEventListener("focus", onQiFocus);
+  }, { once: true });
+}
+
+// Lancer le guidage quand l'onglet Lebensmittel devient actif
+(function patchSwitchTabForFFU() {
+  const orig = window.switchTab;
+  if (!orig) return;
+  window.switchTab = function(t) {
+    orig.apply(this, arguments);
+    if (t === "inv" && _ffuIsActive()) {
+      setTimeout(initFirstFoodGuidance, 200);
+    }
+  };
+})();
+
 // ── Onboarding première utilisation ──────────────────────────────────────
 const OB_KEY  = "tenir_onboarding_done";
 const OB_STEP = "tenir_onboarding_step"; // 1=foyer 2=water 3=inv 4=cooking 5=done
