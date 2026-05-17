@@ -851,7 +851,7 @@
         </div>
         <div class="quick-entry-feedback" id="quick-feedback"></div>
         <div class="ffu-hint" id="ffu-hint-mic">
-          <strong>Touchez le microphone à côté de la barre d'espace puis parlez.</strong>
+          <strong>Touchez ce champ, puis le microphone à côté de la barre d'espace.</strong>
           <div class="ffu-example">Exemple : 400 g pois chiches en conserve mai 2026</div>
         </div>
         <p style="font-size:11px;color:var(--text3);margin:4px 0 10px;font-style:italic;line-height:1.4">Même des dictées approximatives fonctionnent souvent.</p>
@@ -5876,6 +5876,14 @@ function focusQuickInputSoon() {
     el.scrollIntoView({ behavior:"smooth", block:"center" });
   }, 150);
 }
+
+function focusQuickInput() {
+  const qi = document.getElementById("quick-input");
+  if (!qi) return;
+  qi.focus({ preventScroll: false });
+  qi.click();
+  try { const len = qi.value.length; qi.setSelectionRange(len, len); } catch(e) {}
+}
 let _scanMode    = true; // toujours actif
 let _scanCount   = 0;
 let _scanParsed  = null;
@@ -5902,10 +5910,10 @@ function scanCancel() {
   if (p) p.style.display = "none";
   const fb = document.getElementById("quick-feedback");
   if (fb) { fb.textContent = ""; fb.className = "quick-entry-feedback"; }
-  setTimeout(() => {
-    const qi = document.getElementById("quick-input");
-    if (qi) { qi.value = ""; qi.focus(); }
-  }, 0);
+  // Focus immédiat dans le geste utilisateur (iOS Safari)
+  focusQuickInput();
+  setTimeout(focusQuickInput, 0);
+  setTimeout(focusQuickInput, 80);
 }
 
 async function scanConfirm() {
