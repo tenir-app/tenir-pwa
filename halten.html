@@ -245,6 +245,72 @@
                    width:calc(100% - 32px); max-width:400px; box-sizing:border-box;
                    box-shadow:0 4px 32px rgba(0,0,0,.2); max-height:80vh; overflow-y:auto; }
     @media(prefers-color-scheme:dark){ #compl-modal { background:#252523; } }
+
+    /* ── Lebensmittelbasis modale ── */
+    #base-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
+                    backdrop-filter:blur(3px); z-index:9997; }
+    #base-overlay.open { display:flex; flex-direction:column; }
+    #base-modal { background:var(--surface); display:flex; flex-direction:column;
+                  width:100%; height:100%; max-width:600px; margin:0 auto;
+                  box-shadow:0 4px 32px rgba(0,0,0,.2); overflow:hidden; }
+    @media(min-width:600px){ #base-overlay { align-items:center; justify-content:center; padding:20px; }
+      #base-modal { height:90vh; border-radius:18px; } }
+    @media(prefers-color-scheme:dark){ #base-modal { background:var(--surface); } }
+    .base-header { display:flex; align-items:center; justify-content:space-between;
+                   padding:16px 16px 12px; border-bottom:0.5px solid var(--border); flex-shrink:0; }
+    .base-header-left { display:flex; flex-direction:column; gap:2px; }
+    .base-title { font-size:17px; font-weight:700; color:var(--text); }
+    .base-sub   { font-size:11px; color:var(--text3); }
+    .base-close { width:30px; height:30px; border-radius:50%; border:none; background:var(--surface2);
+                  color:var(--text2); font-size:16px; cursor:pointer; display:flex; align-items:center;
+                  justify-content:center; }
+    .base-controls { padding:10px 16px 8px; border-bottom:0.5px solid var(--border); flex-shrink:0; gap:8px; display:flex; flex-direction:column; }
+    .base-search { width:100%; box-sizing:border-box; padding:8px 12px; border-radius:8px;
+                   border:0.5px solid var(--border2); background:var(--surface2); color:var(--text);
+                   font-size:14px; outline:none; }
+    .base-filters { display:flex; gap:6px; }
+    .base-filter-btn { flex:1; padding:6px 4px; border-radius:8px; border:0.5px solid var(--border2);
+                       background:var(--surface2); color:var(--text2); font-size:12px; cursor:pointer;
+                       font-weight:500; transition:background .15s; }
+    .base-filter-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
+    .base-list { flex:1; overflow-y:auto; padding:0 0 80px; }
+    .base-item { display:flex; align-items:center; justify-content:space-between;
+                 padding:11px 16px; border-bottom:0.5px solid var(--border); cursor:pointer; gap:8px; }
+    .base-item:active { background:var(--surface2); }
+    .base-item-name { font-size:14px; color:var(--text); font-weight:500; flex:1; min-width:0;
+                      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .base-item-right { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .base-item-kcal { font-size:12px; color:var(--text3); }
+    .base-badge { font-size:10px; font-weight:600; padding:2px 7px; border-radius:20px; white-space:nowrap; }
+    .base-badge-tenir { background:var(--blue-bg); color:var(--blue); }
+    .base-badge-user  { background:var(--green-bg); color:var(--green); }
+    .base-badge-prio  { background:var(--amber-bg); color:var(--amber); }
+    .base-empty { padding:40px 16px; text-align:center; color:var(--text3); font-size:14px; }
+    /* Fiche détail */
+    #base-detail-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
+                           backdrop-filter:blur(2px); z-index:9998; align-items:flex-end;
+                           justify-content:center; }
+    #base-detail-overlay.open { display:flex; }
+    @media(min-width:600px){ #base-detail-overlay { align-items:center; }
+      #base-detail { border-radius:18px !important; max-width:420px; margin:20px; } }
+    #base-detail { background:var(--surface); border-radius:18px 18px 0 0; width:100%;
+                   max-width:600px; padding:24px 20px 32px; box-sizing:border-box;
+                   box-shadow:0 -4px 24px rgba(0,0,0,.2); }
+    @media(prefers-color-scheme:dark){ #base-detail { background:var(--surface); } }
+    .bd-name   { font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px; }
+    .bd-source { font-size:12px; color:var(--text3); margin-bottom:18px; }
+    .bd-macros { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+    .bd-macro  { background:var(--surface2); border-radius:10px; padding:10px 14px; }
+    .bd-macro-label { font-size:10px; text-transform:uppercase; letter-spacing:.06em;
+                      color:var(--text3); margin-bottom:3px; }
+    .bd-macro-val   { font-size:18px; font-weight:700; color:var(--text); }
+    .bd-macro-unit  { font-size:11px; color:var(--text3); }
+    .bd-actions { display:flex; flex-direction:column; gap:8px; }
+    .bd-btn { padding:12px; border-radius:10px; border:none; font-size:14px; font-weight:600;
+              cursor:pointer; width:100%; }
+    .bd-btn-primary   { background:var(--green); color:#fff; }
+    .bd-btn-secondary { background:var(--surface2); color:var(--text2); }
+        .bd-btn-danger    { background:var(--red-bg); color:var(--red); }
     .compl-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:3px; }
     .compl-sub   { font-size:12px; color:var(--text3); margin-bottom:16px; line-height:1.5; }
     .compl-item  { display:flex; justify-content:space-between; align-items:flex-start;
@@ -977,7 +1043,8 @@
       <div class="debug-bar" id="debug-bar"></div>
     </div>
     <div class="sec-title" id="ajouts-manuels-title">Manuelle Einträge</div>
-    <div class="inv-list" id="manual-food-list" style="margin-bottom:1.25rem"><div class="empty-inv">Noch keine manuellen Einträge.</div></div>
+    <div class="inv-list" id="manual-food-list" style="margin-bottom:1rem"><div class="empty-inv">Noch keine manuellen Einträge.</div></div>
+    <button onclick="openBaseModal()" style="width:100%;margin-bottom:1.5rem;padding:10px;border-radius:10px;border:0.5px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;text-align:left;">📚 Lebensmittelbasis — ansehen und anpassen</button>
 
     <!-- Vollständiges Inventar -->
     <div class="print-title">Lebensmittelinventar — sortiert nach Nutzungsbeginn<br><span id="print-date" style="font-size:13px;font-weight:400"></span></div>
@@ -1647,14 +1714,46 @@ const LOCAL_FOOD_DB = {
     aliases: ["flocons avoine","avoine","haferflocken","hafer","oats","rolled oats","oatmeal","porridge"],
     category: "cereale", state: "dry", requiresCooking: false,
     waterNeed: "low", energyNeed: "none", generic: [],
-    nutrition: { kcal:3690, protein:130, carbs:660, fat:70 },
+    nutrition: { kcal:3720, protein:140, carbs:590, fat:70 },
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
+  },
+  "musli_basis": {
+    label: "Müsli Basis", labelDE: "Müsli Basis",
+    aliases: [
+      "musli basis","müsli basis","muesli basis",
+      "dm musli","dm müsli","dm muesli",
+      "basis musli","basis müsli","basis muesli",
+      "musli ohne rosinen","müsli ohne rosinen","muesli ohne rosinen",
+      "bio musli","bio müsli","bio muesli",
+      "dm bio musli","dm bio müsli","dm bio muesli",
+      "basis muesli ohne rosinen","musli basis ohne rosinen",
+    ],
+    category: "cereale", state: "dry", requiresCooking: false,
+    waterNeed: "low", energyNeed: "none", generic: [],
+    nutrition: { kcal:3830, protein:120, carbs:560, fat:98 },
+    openedLifeCold: "1–2 mois si refermé au sec", openedLifeNoCold: "1–2 mois si refermé au sec",
+  },
+  "musli_fruchte": {
+    label: "Früchtemüsli", labelDE: "Früchtemüsli",
+    aliases: [
+      "fruchtemusli","früchtemüsli","fruchtmusli","fruchtmüsli",
+      "musli mit fruchten","müsli mit früchten","muesli mit fruchten","muesli mit früchten",
+      "musli fruchte","müsli früchte","muesli fruchte",
+      "musli trockenfruechte","müsli trockenfrüchte","muesli trockenfruechte",
+      "rosinen musli","rosinen müsli","musli rosinen","müsli rosinen",
+      "bio fruchtemusli","bio früchtemüsli","dm fruchtemusli","dm früchtemüsli",
+      "trokenfruchte musli","musli mit rosinen","muesli rosinen",
+    ],
+    category: "cereale", state: "dry", requiresCooking: false,
+    waterNeed: "low", energyNeed: "none", generic: [],
+    nutrition: { kcal:3460, protein:74, carbs:650, fat:42 },
+    openedLifeCold: "1–2 Monate trocken verschlossen", openedLifeNoCold: "1–2 Monate trocken verschlossen",
   },
   "farine_ble": {
     label: "Farine de blé",
     labelDE: "Weizenmehl",
     aliases: ["farine de ble","farine blanche","weizenmehl","mehl","wheat flour","all-purpose flour","farine"],
-    category: "cereale", state: "dry", requiresCooking: false,
+    category: "cereale", state: "dry", requiresCooking: true,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:3640, protein:100, carbs:720, fat:10 },
     openedLife: "1–3 mois",
@@ -1671,7 +1770,7 @@ const LOCAL_FOOD_DB = {
   "lentilles_rouges_seches": {
     label: "Lentilles rouges (sèches)", labelDE: "Rote Linsen (trocken)",
     aliases: ["lentilles rouges seches","lentilles rouges sec","red split lentils"],
-    category: "legumineuse", state: "dry", requiresCooking: true,
+    category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium", generic: [],
     nutrition: { kcal:3350, protein:250, carbs:600, fat:10 },
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
@@ -1681,7 +1780,7 @@ const LOCAL_FOOD_DB = {
     aliases: ["lentilles corail","lentille corail","lentilles corail seches",
               "red lentils","red lentil","rote linsen","rote linse",
               "lentilles corail sec","linsen rot"],
-    category: "legumineuse", state: "dry", requiresCooking: true,
+    category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "medium", energyNeed: "low", generic: [],
     nutrition: { kcal:3500, protein:250, carbs:600, fat:10 },
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
@@ -1689,24 +1788,24 @@ const LOCAL_FOOD_DB = {
   "lentilles_vertes_seches": {
     label: "Lentilles vertes (sèches)", labelDE: "Grüne Linsen (trocken)",
     aliases: ["lentilles vertes seches","lentilles vertes sec","lentilles du puy","gruene linsen"],
-    category: "legumineuse", state: "dry", requiresCooking: true,
+    category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium", generic: [],
-    nutrition: { kcal:3160, protein:240, carbs:560, fat:10 },
+    nutrition: { kcal:3100, protein:240, carbs:500, fat:10 },
   },
   "lentilles_vertes": {
     label: "Lentilles vertes", labelDE: "Grüne Linsen",
     aliases: ["lentilles vertes","lentille verte",
               "green lentils","green lentil",
               "grune linsen","grüne linsen"],
-    category: "legumineuse", state: "dry", requiresCooking: true,
+    category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "medium", energyNeed: "medium", generic: [],
-    nutrition: { kcal:3400, protein:250, carbs:600, fat:10 },
+    nutrition: { kcal:3100, protein:240, carbs:500, fat:10 },
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
   },
   "lentilles_generique": {
     label: "Lentilles", labelDE: "Linsen",
     aliases: ["lentilles","linsen","lentils"],
-    category: "legumineuse", state: "dry", requiresCooking: true,
+    category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium",
     generic: ["lentilles","linsen","lentils"],
     nutrition: { kcal:3250, protein:245, carbs:580, fat:10 },
@@ -1715,7 +1814,7 @@ const LOCAL_FOOD_DB = {
     label: "Pois chiches (secs)", labelDE: "Kichererbsen (trocken)",
     aliases: ["pois chiches secs","pois chiches sec","kichererbsen trocken",
               "dried chickpeas","raw chickpeas","chickpeas dry"],
-    category: "legumineuse", state: "dry", requiresCooking: true,
+    category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium", generic: [],
     nutrition: { kcal:3640, protein:190, carbs:610, fat:60 },
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
@@ -1728,7 +1827,7 @@ const LOCAL_FOOD_DB = {
               "chickpeas canned","canned chickpeas","cooked chickpeas"],
     category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
-    nutrition: { kcal:1640, protein:90, carbs:270, fat:25 },
+    nutrition: { kcal:1470, protein:90, carbs:220, fat:25 },
     openedLifeCold: "2–3 jours", openedLifeNoCold: "1 jour",
   },
   /* Entree generique : capte les termes vagues et force l'ambiguite */
@@ -1736,16 +1835,16 @@ const LOCAL_FOOD_DB = {
     label: "Pois chiches",
     labelDE: "Kichererbsen",
     aliases: ["pois chiches","kichererbsen","chickpeas"],
-    category: "legumineuse", state: "dry", requiresCooking: true,
+    category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium",
     generic: ["pois chiches","kichererbsen","chickpeas"],
-    nutrition: { kcal:1640, protein:90, carbs:270, fat:25 },
+    nutrition: { kcal:1470, protein:90, carbs:220, fat:25 },
   },
   "haricots_rouges_secs": {
     label: "Haricots rouges (secs)",
-    labelDE: "Rote Bohnen (trocken)",
+    labelDE: "Kidneybohnen (trocken)",
     aliases: ["haricots rouges secs","haricots rouges sec","rote bohnen trocken","dried kidney beans","kidney beans dry"],
-    category: "legumineuse", state: "dry", requiresCooking: true,
+    category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium", generic: [],
     nutrition: { kcal:3330, protein:220, carbs:600, fat:10 },
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
@@ -1765,10 +1864,10 @@ const LOCAL_FOOD_DB = {
   },
   "haricots_generique": {
     label: "Haricots rouges",
-    labelDE: "Rote Bohnen",
+    labelDE: "Kidneybohnen",
     aliases: ["haricots rouges","rote bohnen","kidney beans","red kidney beans","haricots",
               "kidney bohnen","kidneybohnen"],
-    category: "legumineuse", state: "dry", requiresCooking: true,
+    category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium",
     generic: ["haricots rouges","haricots","bohnen","beans"],
     nutrition: { kcal:900, protein:85, carbs:140, fat:5 },
@@ -2707,14 +2806,14 @@ const LOCAL_FOOD_DB = {
               "soja edamame","haricots soja"],
     category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
-    nutrition: { kcal:1300, protein:120, carbs:100, fat:60 },
+    nutrition: { kcal:1200, protein:110, carbs:100, fat:60 },
     openedLifeCold: "2–3 jours", openedLifeNoCold: "1 jour",
   },
   "pois_casses": {
     label: "Pois cassés",
     labelDE: "Erbsen (getrocknet)",
     aliases: ["pois casses","pois cassés","erbsen","split peas","yellow split peas","green split peas"],
-    category: "legumineuse", state: "dry", requiresCooking: true,
+    category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium", generic: [],
     nutrition: { kcal:3420, protein:240, carbs:600, fat:10 },
   },
@@ -2884,7 +2983,7 @@ const LOCAL_FOOD_DB = {
     ],
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
-    nutrition: { kcal:750, protein:62, carbs:112, fat:16 },
+    nutrition: { kcal:630, protein:34, carbs:86, fat:8 },
     openedLifeCold: "2–3 jours", openedLifeNoCold: "1 jour",
   },
   "tomates_des_conserve": {
@@ -3481,7 +3580,17 @@ function _searchLocalDB(query) {
       if (/vollkorn|whole|complet/.test(q) && /vollkorn|complet|whole/.test(entry.label.toLowerCase())) {
         best = Math.min(best + 20, 100);
       }
-      results.push({ key, entry, score: best, exact });
+      // Pénalité : produit dérivé/composé (pâtes enrichies, snacks, etc.)
+      // quand la query est un aliment de base simple (sans espace, sans qualificateur)
+      const _isSimpleQuery = !q.includes(" ") && q.length > 4;
+      const _isDerived = /fusilli|spaghetti|penne|nudeln|pasta|chips|cracker|snack|riegel|keks/.test(
+        (entry.label + " " + (entry.labelDE || "")).toLowerCase()
+      );
+      if (_isSimpleQuery && _isDerived && !exact) {
+        best = Math.max(0, best - 40);
+      }
+      // Ne pas inclure les génériques (affichage) : filtrés en aval dans les candidats
+      if (best >= 30) results.push({ key, entry, score: best, exact });
     }
   }
 
@@ -3906,8 +4015,10 @@ function getFoodDataSync(name) {
 
   const best = matches[0];
 
-  /* Construire les candidats (max 6) pour le panneau de selection */
-  const candidates = matches.slice(0, 6).map(m => ({
+  /* Construire les candidats (max 6) pour le panneau de selection — sans génériques */
+  const candidates = matches
+    .filter(m => m.entry.generic.length === 0)
+    .slice(0, 6).map(m => ({
     name:      getFoodDisplayName(m.entry),
     nameDE:    m.entry.labelDE || null,
     kcal_100g: Math.round(m.entry.nutrition.kcal / 10),
@@ -4001,6 +4112,32 @@ function getFoodDataSync(name) {
   }
 
   /* CAS 1 : match clair */
+  /* Sécurité : si le meilleur match est une entrée générique, forcer la sélection. */
+  if (best.entry.generic.length > 0) {
+    const specificCandidates = matches
+      .filter(m => m.entry.generic.length === 0)
+      .slice(0, 6)
+      .map(m => ({
+        name:      getFoodDisplayName(m.entry),
+        nameDE:    m.entry.labelDE || null,
+        kcal_100g: Math.round(m.entry.nutrition.kcal / 10),
+        score:     m.score,
+        matchType: "partial",
+        data: { kcal: m.entry.nutrition.kcal, protein: m.entry.nutrition.protein,
+                carbs: m.entry.nutrition.carbs, fat: m.entry.nutrition.fat,
+                openedLife: m.entry.openedLife||null, openedLifeCold: m.entry.openedLifeCold||null,
+                openedLifeNoCold: m.entry.openedLifeNoCold||null },
+      }));
+    showDebug({ type: "generic", score: best.score, source: "LOCAL_FOOD_DB", match: best.entry.label });
+    return {
+      data: null, dataSource: "none", matchScore: best.score,
+      matchType: "none", matchLabel: "ambigu",
+      source: "LOCAL_FOOD_DB",
+      candidates: specificCandidates.length ? specificCandidates : candidates,
+      apiProductName: null, displayName: null,
+    };
+  }
+
   const matchType  = best.exact ? "exact" : "partial";
   const matchScore = best.exact ? 95 : Math.min(best.score, 85);
   const dataSource = best.exact ? "local_exact" : "local_partial";
@@ -6257,7 +6394,7 @@ function toggleScanMode() { /* désactivé — mode scan toujours actif */ }
 function _showScanPreview(parsed) {
   _scanParsed = parsed;
   const $ = id => document.getElementById(id);
-  $("scan-name").textContent = parsed._displayName || parsed.name;
+  $("scan-name").textContent = (parsed._ambiguous ? parsed.name : null) || parsed._displayName || parsed.name;
   $("scan-qty").textContent  = parsed.qty + " " + parsed.unit;
   $("scan-exp").textContent  = displayExpiry(parsed.expiry) || "kein Datum";
   $("scan-preview").style.display = "block";
@@ -6280,8 +6417,82 @@ function scanCancel() {
   setTimeout(focusQuickInput, 80);
 }
 
+/** Retourne des clés DB forcées pour les cas ambigus courants, ou null si pas de règle. */
+function getForcedCandidateKeysForQuery(rawName) {
+  const n = (rawName || "").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/\bk\s*\.?\s+/g, "k")
+    .trim();
+  if (/kichererbse/.test(n) || /kirchererbse/.test(n)) {
+    return ["pois_chiches_secs", "pois_chiches_cuits"];
+  }
+  if (/kidneybohne/.test(n) || /kidney\s*bohne/.test(n) || /kidney\s*bean/.test(n) ||
+      /rote\s*bohne/.test(n) || /haricots?\s*rouge/.test(n)) {
+    return ["haricots_rouges_secs", "haricots_rouges_cuits"];
+  }
+  return null;
+}
+
 async function scanConfirm() {
   if (!_scanParsed) return;
+
+  // Sécurité : si le bouton affichait "Auswahl öffnen", ne jamais ajouter directement
+  if (_scanParsed._ambiguous) {
+    // Construire _pendingItem depuis _scanParsed
+    const name    = _scanParsed._displayName || _scanParsed.name || "";
+    const qty     = parseFloat(_scanParsed.qty) || 0;
+    const unit    = _scanParsed.unit || "";
+    const expiry  = _scanParsed.expiry || null;
+    const unitW   = _scanParsed.unitWeightKg || null;
+    const kgVal   = unit === "kg" || unit === "L" ? qty : qty / 1000;
+    _pendingItem  = {
+      name, qty, unit, kg: kgVal, expiry, useFrom: null,
+      count: _scanParsed.count || null, unitWeightKg: unitW,
+    };
+    // Pré-remplir les champs pour que showCandidatePanel / commitFoodItem retrouvent tout
+    const fName = document.getElementById("f-name");
+    const fQty  = document.getElementById("f-qty");
+    const fUnit = document.getElementById("f-unit");
+    const fExp  = document.getElementById("f-exp");
+    if (fName) fName.value = name;
+    if (fQty)  fQty.value  = _scanParsed.qty || "";
+    if (fUnit && unit) fUnit.value = unit;
+    if (fExp  && expiry) fExp.value = appMonthToInputMonth(expiry);
+    // Fermer le preview
+    const p = document.getElementById("scan-preview");
+    if (p) p.style.display = "none";
+    // Ouvrir le panneau de sélection — aucun ajout direct
+    // Candidats forcés pour les cas courants (ex: kichererbsen)
+    const forcedKeys = getForcedCandidateKeysForQuery(_scanParsed._rawName || _scanParsed.name || "");
+    let candidates;
+    if (forcedKeys) {
+      candidates = forcedKeys
+        .map(k => {
+          const entry = LOCAL_FOOD_DB[k];
+          if (!entry) return null;
+          return {
+            name:      getFoodDisplayName(entry),
+            nameDE:    entry.labelDE || null,
+            kcal_100g: Math.round(entry.nutrition.kcal / 10),
+            score:     100,
+            matchType: "exact",
+            source:    "LOCAL_FOOD_DB",
+            data:      { kcal: entry.nutrition.kcal, protein: entry.nutrition.protein,
+                         carbs: entry.nutrition.carbs, fat: entry.nutrition.fat },
+          };
+        })
+        .filter(Boolean);
+    } else {
+      candidates   = (_scanParsed._candidates && _scanParsed._candidates.length)
+        ? _scanParsed._candidates
+        : (getFoodDataSync(name)?.candidates || []);
+    }
+    const searchResult = _scanParsed._searchResult || { displayName: name, candidates };
+    showCandidatePanel(candidates, searchResult);
+    setHint("⚠ Mehrdeutige Übereinstimmung — bitte unten das richtige Produkt wählen.", "var(--amber)");
+    return;
+  }
+
   // S'assurer que les champs sont remplis depuis _scanParsed
   // (commitFoodItem les vide — si scanConfirm est appelé après un commit partiel,
   //  les champs seraient vides et la garde afficherait un message rouge à tort)
@@ -6384,6 +6595,9 @@ function analyzeQuickInput() {
       (r.matchType === "partial" && r.candidates && r.candidates.length > 1)
     ));
     const _ambiguous = _willOpenCandidates(_qResultFinal) || _willOpenCandidates(_qResult);
+    // Stocker les candidats pour scanConfirm si ambigu
+    const _activeResult = (_willOpenCandidates(_qResultFinal) ? _qResultFinal : _qResult);
+    const _candidates   = (_ambiguous && _activeResult) ? (_activeResult.candidates || []) : [];
     // Succès : pré-remplir les champs
     document.getElementById("f-name").value = _canonicalName;
     document.getElementById("f-qty").value  = parsed.qty;
@@ -6401,14 +6615,16 @@ function analyzeQuickInput() {
     };
     checkPackageWarning();
     if (details && !_scanMode) details.open = true;
-    let msg = `✓ ${parsed.qty} ${parsed.unit} · ${_displayName}`;
+    // Si ambigu : afficher le terme reconnu brut, pas le label du premier candidat
+    const _feedbackName = _ambiguous ? parsed.name : _displayName;
+    let msg = `✓ ${parsed.qty} ${parsed.unit} · ${_feedbackName}`;
     if (parsed.expiry) msg += ` · exp. ${displayExpiry(parsed.expiry)}`;
     feedback.textContent = msg;
     feedback.className   = "quick-entry-feedback ok";
     input.value = "";
     // Mode scan : afficher l'aperçu avec le nom canonique et l'état d'ambiguïté
     if (_scanMode) {
-      _showScanPreview({ ...parsed, _displayName, _ambiguous });
+      _showScanPreview({ ...parsed, _displayName, _ambiguous, _candidates, _searchResult: _activeResult, _rawName: parsed.name });
     }
   } else if (parsed && !parsed.unit) {
     // Emballage sans poids réel — message précis selon le type de contenant
@@ -7142,10 +7358,14 @@ function showCandidatePanel(candidates, searchResult) {
 
   list.innerHTML = "";
 
-  if (!candidates.length) {
+  // Filtrer les candidats trop faibles (dérivés pénalisés, score < 40)
+  const filteredCandidates = candidates.filter(c => c.score >= 40);
+  const displayCandidates  = filteredCandidates.length ? filteredCandidates : candidates;
+
+  if (!displayCandidates.length) {
     list.innerHTML = '<div class="candidate-none">Keine gültigen Kandidaten verfügbar.</div>';
   } else {
-    candidates.forEach((c) => {
+    displayCandidates.forEach((c) => {
       const item = document.createElement("div");
       item.className = "candidate-item";
       const kcalInfo    = c.data ? `${c.kcal_100g} kcal/100g` : "Daten unvollständig";
@@ -10637,6 +10857,235 @@ function obInjectWeiter(panelId, step) {
   opacity: .75;
 }
 </style>
+
+<!-- ── Lebensmittelbasis modale ── -->
+<div id="base-overlay" role="dialog" aria-modal="true" aria-label="Lebensmittelbasis">
+  <div id="base-modal">
+    <div class="base-header">
+      <div class="base-header-left">
+        <div class="base-title">Lebensmittelbasis</div>
+        <div class="base-sub">Produkte aus der integrierten Basis und von Ihnen hinzugefügte Produkte.</div>
+      </div>
+      <button class="base-close" onclick="closeBaseModal()" aria-label="Schließen">✕</button>
+    </div>
+    <div class="base-controls">
+      <input class="base-search" id="base-search" type="search" placeholder="Suchen…" oninput="renderBaseList()" />
+      <div class="base-filters">
+        <button class="base-filter-btn active" id="bf-all"   onclick="setBaseFilter('all')">Alle</button>
+        <button class="base-filter-btn"        id="bf-tenir" onclick="setBaseFilter('tenir')">Standard</button>
+        <button class="base-filter-btn"        id="bf-user"  onclick="setBaseFilter('user')">Eigene</button>
+      </div>
+    </div>
+    <div class="base-list" id="base-list"></div>
+  </div>
+</div>
+
+<!-- ── Produktdetail ── -->
+<div id="base-detail-overlay" onclick="if(event.target===this)closeBaseDetail()">
+  <div id="base-detail">
+    <div class="bd-name" id="bd-name"></div>
+    <div class="bd-source" id="bd-source"></div>
+    <div class="bd-macros">
+      <div class="bd-macro"><div class="bd-macro-label">Kalorien</div><div class="bd-macro-val" id="bd-kcal">—</div><div class="bd-macro-unit">kcal / 100 g</div></div>
+      <div class="bd-macro"><div class="bd-macro-label">Eiweiß</div><div class="bd-macro-val" id="bd-prot">—</div><div class="bd-macro-unit">g / 100 g</div></div>
+      <div class="bd-macro"><div class="bd-macro-label">Kohlenhydrate</div><div class="bd-macro-val" id="bd-carbs">—</div><div class="bd-macro-unit">g / 100 g</div></div>
+      <div class="bd-macro"><div class="bd-macro-label">Fett</div><div class="bd-macro-val" id="bd-fat">—</div><div class="bd-macro-unit">g / 100 g</div></div>
+    </div>
+    <div class="bd-actions" id="bd-actions"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   LEBENSMITTELBASIS — Ansicht, Anpassung
+═══════════════════════════════════════════════════════════ */
+
+let _baseFilter = "all";
+
+function openBaseModal() {
+  document.getElementById("base-overlay").classList.add("open");
+  document.getElementById("base-search").value = "";
+  _baseFilter = "all";
+  _updateBaseFilterBtns();
+  renderBaseList();
+}
+
+function closeBaseModal() {
+  document.getElementById("base-overlay").classList.remove("open");
+}
+
+function setBaseFilter(f) {
+  _baseFilter = f;
+  _updateBaseFilterBtns();
+  renderBaseList();
+}
+
+function _updateBaseFilterBtns() {
+  ["all","tenir","user"].forEach(k => {
+    const id = k === "all" ? "bf-all" : k === "tenir" ? "bf-tenir" : "bf-user";
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.toggle("active", _baseFilter === k);
+  });
+}
+
+function renderBaseList() {
+  const q = (document.getElementById("base-search")?.value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+  const container = document.getElementById("base-list");
+  if (!container) return;
+
+  const items = [];
+  const userLabels = new Set(userFoodDB.map(e => e.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim()));
+
+  if (_baseFilter !== "tenir") {
+    userFoodDB.forEach(entry => {
+      const norm = entry.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+      const hasTenir = Object.values(LOCAL_FOOD_DB).some(e =>
+        ((e.labelDE||e.label)||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim() === norm ||
+        (e.label||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim() === norm
+      );
+      items.push({ key: entry.id, label: entry.label, kcal: Math.round(entry.nutrition.kcal/10), source: "user", prio: hasTenir, entry });
+    });
+  }
+
+  if (_baseFilter !== "user") {
+    Object.entries(LOCAL_FOOD_DB).forEach(([key, e]) => {
+      if (e.generic && e.generic.length > 0) return;
+      const displayLabel = e.labelDE || e.label;
+      const norm = displayLabel.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+      if (userLabels.has(norm)) return;
+      items.push({ key, label: displayLabel, kcal: Math.round(e.nutrition.kcal/10), source: "tenir", prio: false, entry: e, localKey: key });
+    });
+  }
+
+  const filtered = q
+    ? items.filter(it => it.label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(q))
+    : items;
+
+  filtered.sort((a,b) => {
+    if (a.source !== b.source) return a.source === "user" ? -1 : 1;
+    return a.label.localeCompare(b.label, "de");
+  });
+
+  if (!filtered.length) {
+    container.innerHTML = `<div class="base-empty">Kein Produkt gefunden.</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(it => {
+    let badgeClass = "base-badge-tenir", badgeLabel = "Standard";
+    if (it.source === "user" && it.prio)  { badgeClass = "base-badge-prio"; badgeLabel = "Eigene ★"; }
+    else if (it.source === "user")        { badgeClass = "base-badge-user"; badgeLabel = "Eigene"; }
+    return `<div class="base-item" onclick="_openBaseDetail(${JSON.stringify(it.key)},${JSON.stringify(it.source)})">
+      <div class="base-item-name">${_esc(it.label)}</div>
+      <div class="base-item-right">
+        <span class="base-item-kcal">${it.kcal} kcal</span>
+        <span class="base-badge ${badgeClass}">${badgeLabel}</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function _esc(s) {
+  return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function _openBaseDetail(key, source) {
+  let label, kcal, prot, carbs, fat, isPrio = false;
+
+  if (source === "user") {
+    const e = userFoodDB.find(x => x.id === key);
+    if (!e) return;
+    label = e.label;
+    kcal  = Math.round(e.nutrition.kcal/10);
+    prot  = +(e.nutrition.protein/10).toFixed(1);
+    carbs = +(e.nutrition.carbs/10).toFixed(1);
+    fat   = +(e.nutrition.fat/10).toFixed(1);
+    const norm = label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+    isPrio = Object.values(LOCAL_FOOD_DB).some(e2 =>
+      ((e2.labelDE||e2.label)||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim() === norm
+    );
+  } else {
+    const e = LOCAL_FOOD_DB[key];
+    if (!e) return;
+    label = e.labelDE || e.label;
+    kcal  = Math.round(e.nutrition.kcal/10);
+    prot  = +(e.nutrition.protein/10).toFixed(1);
+    carbs = +(e.nutrition.carbs/10).toFixed(1);
+    fat   = +(e.nutrition.fat/10).toFixed(1);
+  }
+
+  document.getElementById("bd-name").textContent   = label;
+  document.getElementById("bd-source").textContent =
+    source === "user" ? (isPrio ? "Eigenes Produkt — hat Vorrang vor Standard" : "Eigenes Produkt") : "Standard (integrierte Basis)";
+  document.getElementById("bd-kcal").textContent   = kcal;
+  document.getElementById("bd-prot").textContent   = prot;
+  document.getElementById("bd-carbs").textContent  = carbs;
+  document.getElementById("bd-fat").textContent    = fat;
+
+  const actions = document.getElementById("bd-actions");
+  if (source === "user") {
+    actions.innerHTML = `
+      <button class="bd-btn bd-btn-primary"   onclick="_editUserFood(${JSON.stringify(key)})">✏️ Bearbeiten</button>
+      <button class="bd-btn bd-btn-danger"    onclick="_deleteUserFood(${JSON.stringify(key)})">Löschen</button>
+      <button class="bd-btn bd-btn-secondary" onclick="closeBaseDetail()">Schließen</button>`;
+  } else {
+    actions.innerHTML = `
+      <button class="bd-btn bd-btn-primary"   onclick="_createUserOverride(${JSON.stringify(key)})">Eigene Version erstellen</button>
+      <button class="bd-btn bd-btn-secondary" onclick="closeBaseDetail()">Schließen</button>`;
+  }
+
+  document.getElementById("base-detail").dataset.key    = key;
+  document.getElementById("base-detail").dataset.source = source;
+  document.getElementById("base-detail-overlay").classList.add("open");
+}
+
+function closeBaseDetail() {
+  document.getElementById("base-detail-overlay").classList.remove("open");
+}
+
+function _editUserFood(id) {
+  const entry = userFoodDB.find(e => e.id === id);
+  if (!entry) return;
+  closeBaseDetail();
+  _pendingItem = { name: entry.label, kg: 0, expiry: null, useFrom: null };
+  showManualEntryPrompt(entry.label, 0, null, null);
+  setTimeout(() => {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    set("m-kcal",    +(entry.nutrition.kcal    / 10).toFixed(1));
+    set("m-protein", +(entry.nutrition.protein / 10).toFixed(1));
+    set("m-carbs",   +(entry.nutrition.carbs   / 10).toFixed(1));
+    set("m-fat",     +(entry.nutrition.fat     / 10).toFixed(1));
+  }, 50);
+}
+
+function _deleteUserFood(id) {
+  const entry = userFoodDB.find(e => e.id === id);
+  if (!entry) return;
+  if (!confirm(`"${entry.label}" aus Ihrer persönlichen Basis löschen?`)) return;
+  userFoodDB = userFoodDB.filter(e => e.id !== id);
+  saveAppData();
+  closeBaseDetail();
+  renderBaseList();
+  setHint(`🗑 "${entry.label}" aus Ihrer Basis gelöscht.`, "var(--amber)");
+}
+
+function _createUserOverride(localKey) {
+  const e = LOCAL_FOOD_DB[localKey];
+  if (!e) return;
+  const displayLabel = e.labelDE || e.label;
+  closeBaseDetail();
+  _pendingItem = { name: displayLabel, kg: 0, expiry: null, useFrom: null };
+  showManualEntryPrompt(displayLabel, 0, null, null);
+  setTimeout(() => {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    set("m-kcal",    +(e.nutrition.kcal    / 10).toFixed(1));
+    set("m-protein", +(e.nutrition.protein / 10).toFixed(1));
+    set("m-carbs",   +(e.nutrition.carbs   / 10).toFixed(1));
+    set("m-fat",     +(e.nutrition.fat     / 10).toFixed(1));
+  }, 50);
+  setHint("Werte anpassen und bestätigen — Ihre Version hat Vorrang.", "var(--blue)");
+}
+</script>
 
 </body>
 </html>
