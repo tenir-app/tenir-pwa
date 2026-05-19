@@ -242,7 +242,7 @@
 
     /* ── Base alimentaire modale ── */
     #base-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
-                    backdrop-filter:blur(3px); z-index:9997; }
+                    backdrop-filter:blur(3px); z-index:9990; }
     #base-overlay.open { display:flex; flex-direction:column; }
     #base-modal { background:var(--surface); display:flex; flex-direction:column;
                   width:100%; height:100%; max-width:600px; margin:0 auto;
@@ -282,7 +282,7 @@
     .base-empty { padding:40px 16px; text-align:center; color:var(--text3); font-size:14px; }
     /* Fiche détail */
     #base-detail-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5);
-                           backdrop-filter:blur(2px); z-index:9998; align-items:flex-end;
+                           backdrop-filter:blur(2px); z-index:9991; align-items:flex-end;
                            justify-content:center; }
     #base-detail-overlay.open { display:flex; }
     @media(min-width:600px){ #base-detail-overlay { align-items:center; }
@@ -753,7 +753,7 @@
     /* ── Onboarding ── */
     #onboarding-overlay { display:none; position:fixed; inset:0;
                           background:rgba(0,0,0,.55); backdrop-filter:blur(4px);
-                          z-index:9997; align-items:flex-start; justify-content:center;
+                          z-index:9999; align-items:flex-start; justify-content:center;
                           padding-top:40px; }
     @media(max-width:520px){ #onboarding-overlay { padding-top:22px; } }
     #onboarding-overlay.open { display:flex; }
@@ -767,11 +767,13 @@
     .ob-sub    { font-size:13px; color:var(--text2); margin-bottom:24px; line-height:1.5; }
     .ob-btn-primary { display:block; width:100%; padding:13px 16px; margin-bottom:10px;
                       background:var(--green); color:#fff; border:none; border-radius:var(--r);
-                      font-size:14px; font-weight:600; cursor:pointer; text-align:left; }
+                      font-size:14px; font-weight:600; cursor:pointer; text-align:left;
+                      touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
     .ob-btn-secondary { display:block; width:100%; padding:11px 16px;
                         background:transparent; color:var(--text2);
                         border:0.5px solid var(--border2); border-radius:var(--r);
-                        font-size:13px; cursor:pointer; text-align:left; }
+                        font-size:13px; cursor:pointer; text-align:left;
+                        touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
     .ob-btn-label { font-size:11px; color:var(--text3); display:block; margin-top:2px; font-weight:400; }
     .ob-btn-primary .ob-btn-label { color:rgba(255,255,255,.75); }
     .weiter-btn { display:inline-flex; align-items:center; gap:6px;
@@ -10619,29 +10621,6 @@ function _createUserOverride(localKey) {
     navigator.serviceWorker.register("./service-worker.js");
   }
 </script>
-
-<button id="reset-ob-btn" onclick="
-  localStorage.removeItem('tenir_onboarding_done');
-  localStorage.removeItem('tenir_onboarding_step');
-  localStorage.removeItem('tenir_onboarding_demo_pending');
-  localStorage.removeItem('tenir_onboarding_after_demo');
-  location.reload();
-">Reset OB</button>
-<style>
-#reset-ob-btn {
-  position: fixed;
-  right: 10px;
-  bottom: 10px;
-  z-index: 99999;
-  padding: 7px 9px;
-  font-size: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border2);
-  background: var(--surface);
-  color: var(--text2);
-  opacity: .75;
-}
-</style>
 
 <!-- ── Base alimentaire modale ── -->
 <div id="base-overlay" role="dialog" aria-modal="true" aria-label="Base alimentaire">
