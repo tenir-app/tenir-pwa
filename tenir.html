@@ -3444,6 +3444,7 @@ function _searchUserFoodDB(query) {
  * Retourne "created" | "updated" | "skipped".
  */
 function _upsertUserFoodDB(name, kcal100, protein100, carbs100, fat100, rawLabel) {
+  console.log("[DIAG2 _upsertUserFoodDB] name:", name, "| rawLabel:", rawLabel);
   // Rejeter noms trop courts ou génériques
   const GENERIC_NAMES = /^(barre|produit|aliment|food|item|autre|inconnu|test|truc|chose)$/i;
   const trimmed = (name || "").trim();
@@ -3457,6 +3458,7 @@ function _upsertUserFoodDB(name, kcal100, protein100, carbs100, fat100, rawLabel
   const displayLabel = (rawLabel && rawLabel.trim())
     ? rawLabel.trim()
     : trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+  console.log("[DIAG2 _upsertUserFoodDB] trimmed:", trimmed, "| normKey:", normKey, "| displayLabel:", displayLabel);
   const existing = userFoodDB.find(e => _normUserKey(e.label) === normKey);
 
   if (existing) {
@@ -6263,11 +6265,16 @@ function analyzeQuickInput() {
   const details = document.querySelector(".classic-form-details");
 
   if (parsed && parsed.unit && parsed.name) {
+    // rawName = texte brut original si disponible, sinon dériver depuis l'input complet
+    const _rawNameResolved = parsed.rawName
+      || _extractRawName(raw, parsed.name)
+      || parsed.name;
+
     // Résoudre le nom canonique dès la prévisualisation
     const _qResult = getFoodDataSync(parsed.name);
     const _displayName = (_qResult && _qResult.displayName)
       ? _qResult.displayName
-      : parsed.name;
+      : _rawNameResolved;
     const _canonicalName = _displayName;
     // Vérifier d'abord les candidats forcés (ex: pois chiches sans précision)
     const _forcedKeys = getForcedCandidateKeysForQuery(parsed.name);
@@ -6276,8 +6283,8 @@ function analyzeQuickInput() {
       (_qResult.matchType === "partial" && _qResult.candidates && _qResult.candidates.length > 1)
     ));
     const _ambiguous = _ambiguous_base || !!_forcedKeys;
-    // Feedback générique si ambigu
-    const _feedbackName = _ambiguous ? parsed.name : _displayName;
+    // Feedback : générique normalisé si ambigu, sinon displayName canonique
+    const _feedbackName = _ambiguous ? _rawNameResolved : _displayName;
     // Succès : pré-remplir les champs (f-name reçoit le nom canonique)
     document.getElementById("f-name").value = _canonicalName;
     document.getElementById("f-qty").value  = parsed.qty;
@@ -6292,7 +6299,7 @@ function analyzeQuickInput() {
     voiceFoodMeta = {
       count:         parsed.count         || null,
       unitWeightKg:  parsed.unitWeightKg  || null,
-      rawName:       parsed.rawName       || null,
+      rawName:       _rawNameResolved,
     };
     checkPackageWarning();
     if (details && !_scanMode) details.open = true;
@@ -6359,12 +6366,17 @@ async function addFoodItem() {
     const parsed = parseQuickFoodInput(rawInput);
     if (parsed && parsed.name !== rawInput.trim()) {
       // La saisie contenait une quantité : on substitue tous les champs détectés
-      document.getElementById("f-name").value = parsed.name;
+      // Conserver rawName si disponible pour l'affichage final
+      const displayForField = parsed.rawName || rawInput.trim();
+      document.getElementById("f-name").value = displayForField;
       qtyField.value  = parsed.qty;
       unitField.value = parsed.unit;
       if (parsed.expiry && !expField.value) {
         expField.value = appMonthToInputMonth(parsed.expiry);
       }
+      // Stocker rawName dans voiceFoodMeta si non déjà défini
+      if (!voiceFoodMeta) voiceFoodMeta = {};
+      if (!voiceFoodMeta.rawName) voiceFoodMeta.rawName = parsed.rawName || null;
       checkPackageWarning();
     }
   }
@@ -6884,11 +6896,6 @@ function commitFoodItem(pending, result) {
   const { name: userInput, qty, unit, kg, expiry, useFrom } = pending;
   const d = result.data;
 
-  console.log("[DIAG commitFoodItem] pending.name (userInput):", userInput);
-  console.log("[DIAG commitFoodItem] pending.rawName:", pending.rawName);
-  console.log("[DIAG commitFoodItem] result.displayName:", result.displayName);
-  console.log("[DIAG commitFoodItem] result.apiProductName:", result.apiProductName);
-  console.log("[DIAG commitFoodItem] name final = result.displayName || userInput:", result.displayName || userInput);
   const location = document.getElementById("session-location")?.value.trim() || null;
   voiceFoodMeta = null;
   const w = document.getElementById("pkg-warning");
@@ -6988,8 +6995,6 @@ function commitFoodItem(pending, result) {
       }
       manualFoods.push({
         id:nextId++, name, qty:`${qty} ${unit}`, unit, kg, expiry,
-        // DIAG — log juste avant le push
-        ...(() => { console.log("[DIAG manualFoods.push] name utilisé:", name, "| userInput:", userInput, "| result.displayName:", result.displayName); return {}; })(),
         useFrom: useFrom || computeDefaultUseFrom(expiry),
         location,
         units,
@@ -7088,7 +7093,7 @@ function showCandidatePanel(candidates, searchResult) {
   panel.scrollIntoView({ behavior:"smooth", block:"center" });
 }
 function showManualEntryPrompt(name, kg, expiry, useFrom) {
-  console.log("[DIAG showManualEntryPrompt] name reçu:", name, "| kg:", kg, "| _pendingItem:", JSON.stringify(_pendingItem));
+  console.log("[DIAG2 showManualEntryPrompt] name reçu:", name, "| _pendingItem.rawName:", _pendingItem?.rawName);
   const panel = document.getElementById("candidate-panel");
   const list  = document.getElementById("candidate-list");
   if (!panel || !list) return;
@@ -7123,9 +7128,10 @@ function commitManualEntry() {
   const _pendingSnapshot = { ..._pendingItem };
   const _userFoodName    = _pendingSnapshot.name;
 
-  console.log("[DIAG commitManualEntry] _userFoodName:", _userFoodName);
-  console.log("[DIAG commitManualEntry] _pendingSnapshot.rawName:", _pendingSnapshot.rawName);
-  console.log("[DIAG commitManualEntry] _pendingSnapshot complet:", JSON.stringify(_pendingSnapshot));
+  console.log("[DIAG2 commitManualEntry] _pendingSnapshot.name:", _pendingSnapshot.name);
+  console.log("[DIAG2 commitManualEntry] _pendingSnapshot.rawName:", _pendingSnapshot.rawName);
+  console.log("[DIAG2 commitManualEntry] _userFoodName (→ _upsertUserFoodDB):", _userFoodName);
+  console.log("[DIAG2 commitManualEntry] rawName passé à _upsertUserFoodDB:", _pendingSnapshot.rawName || null);
 
   // Mémoriser dans userFoodDB AVANT commitFoodItem() pour garantir la disponibilité immédiate.
   const _uResult = _upsertUserFoodDB(_userFoodName, kcal100, prot100, carbs100, fat100,
@@ -7134,7 +7140,6 @@ function commitManualEntry() {
   // rawLabel = texte brut original (avec accents/apostrophes) si disponible
   const _rawLabel = _pendingSnapshot.rawName || null;
 
-  console.log("[DIAG commitManualEntry] _rawLabel:", _rawLabel);
 
   const manualResult = {
     data:          { kcal:kcal100*10, protein:prot100*10, carbs:carbs100*10, fat:fat100*10 },
@@ -7148,9 +7153,6 @@ function commitManualEntry() {
     displayName:   _rawLabel || _userFoodName,
   };
 
-  console.log("[DIAG commitManualEntry] manualResult.displayName:", manualResult.displayName);
-  console.log("[DIAG commitManualEntry] pendingSnapshot envoyé à commitFoodItem:", JSON.stringify(_pendingSnapshot));
-  console.log("[DIAG commitManualEntry] manualResult envoyé à commitFoodItem:", JSON.stringify(manualResult));
   commitFoodItem(_pendingSnapshot, manualResult);
 
   if (_uResult === "created") {
@@ -7166,6 +7168,9 @@ function commitManualEntry() {
 
 function addFoodManually() {
   if (!_pendingItem) return;
+  console.log("[DIAG2 addFoodManually] _pendingItem.name:", _pendingItem.name);
+  console.log("[DIAG2 addFoodManually] _pendingItem.rawName:", _pendingItem.rawName);
+  console.log("[DIAG2 addFoodManually] → passe à showManualEntryPrompt:", _pendingItem.name, "(rawName disponible:", _pendingItem.rawName, ")");
   showManualEntryPrompt(_pendingItem.name, _pendingItem.kg, _pendingItem.expiry, _pendingItem.useFrom);
 }
 
@@ -10553,6 +10558,7 @@ function _updateBaseFilterBtns() {
 }
 
 function renderBaseList() {
+  console.log("[DIAG2 renderBaseList] userFoodDB labels:", userFoodDB.map(e => e.label));
   const q = (document.getElementById("base-search")?.value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
   const container = document.getElementById("base-list");
   if (!container) return;

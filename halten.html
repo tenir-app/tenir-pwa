@@ -6630,11 +6630,16 @@ function analyzeQuickInput() {
   const details = document.querySelector(".classic-form-details");
 
   if (parsed && parsed.unit && parsed.name) {
+    // rawName = texte brut original si disponible, sinon dériver depuis l'input complet
+    const _rawNameResolved = parsed.rawName
+      || _extractRawName(raw, parsed.name)
+      || parsed.name;
+
     // Résoudre le nom canonique dès la prévisualisation
     const _qResult = getFoodDataSync(parsed.name);
     const _displayName = (_qResult && _qResult.displayName)
       ? _qResult.displayName
-      : parsed.name;
+      : _rawNameResolved;
     // Préremplir f-name avec le nom canonique (pas le texte brut)
     const _canonicalName = _displayName;
     // Simuler la recherche que addFoodItem fera avec _canonicalName
@@ -6663,12 +6668,12 @@ function analyzeQuickInput() {
     voiceFoodMeta = {
       count:         parsed.count         || null,
       unitWeightKg:  parsed.unitWeightKg  || null,
-      rawName:       parsed.rawName       || null,
+      rawName:       _rawNameResolved,
     };
     checkPackageWarning();
     if (details && !_scanMode) details.open = true;
-    // Si ambigu : afficher le terme reconnu brut, pas le label du premier candidat
-    const _feedbackName = _ambiguous ? parsed.name : _displayName;
+    // Si ambigu : afficher le terme brut original, pas le label du premier candidat
+    const _feedbackName = _ambiguous ? _rawNameResolved : _displayName;
     let msg = `✓ ${parsed.qty} ${parsed.unit} · ${_feedbackName}`;
     if (parsed.expiry) msg += ` · exp. ${displayExpiry(parsed.expiry)}`;
     feedback.textContent = msg;
@@ -6729,12 +6734,15 @@ async function addFoodItem() {
     const parsed = parseQuickFoodInput(rawInput);
     if (parsed && parsed.name !== rawInput.trim()) {
       // La saisie contenait une quantité : on substitue tous les champs détectés
-      document.getElementById("f-name").value = parsed.name;
+      const displayForField = parsed.rawName || rawInput.trim();
+      document.getElementById("f-name").value = displayForField;
       qtyField.value  = parsed.qty;
       unitField.value = parsed.unit;
       if (parsed.expiry && !expField.value) {
         expField.value = appMonthToInputMonth(parsed.expiry);
       }
+      if (!voiceFoodMeta) voiceFoodMeta = {};
+      if (!voiceFoodMeta.rawName) voiceFoodMeta.rawName = parsed.rawName || null;
       checkPackageWarning();
     }
   }
