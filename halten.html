@@ -11022,19 +11022,75 @@ function closeBaseDetail() {
   document.getElementById("base-detail-overlay").classList.remove("open");
 }
 
+/* ── Lebensmittelbasis-Editor — NUR userFoodDB, kein Inventar ── */
+let _baseFoodEditorLabel = null;
+
+function showBaseFoodEditor(label, kcal100, prot100, carbs100, fat100) {
+  _baseFoodEditorLabel = label;
+  closeBaseDetail();
+  closeBaseModal();
+
+  const panel = document.getElementById("candidate-panel");
+  const list  = document.getElementById("candidate-list");
+  if (!panel || !list) return;
+
+  const _e = (s) => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  list.innerHTML = `
+    <div style="font-size:13px;color:var(--text2);margin-bottom:8px">
+      Lebensmittelbasis — <strong>${_e(label)}</strong>
+      <span style="font-size:11px;color:var(--text3);display:block;margin-top:2px">
+        Diese Werte werden nur in Ihrer persönlichen Basis gespeichert.
+      </span>
+    </div>
+    <div class="form-row macros-row" style="gap:6px;flex-wrap:wrap">
+      <div class="field f-small"><label>kcal/100g</label><input type="number" id="m-kcal"    min="0" step="1"   value="${kcal100}"  style="width:80px"/></div>
+      <div class="field f-small"><label>Eiweiß</label>   <input type="number" id="m-protein" min="0" step="0.1" value="${prot100}"  style="width:80px"/></div>
+      <div class="field f-small"><label>Kohlenhydrate</label><input type="number" id="m-carbs" min="0" step="0.1" value="${carbs100}" style="width:80px"/></div>
+      <div class="field f-small"><label>Fett</label>     <input type="number" id="m-fat"     min="0" step="0.1" value="${fat100}"   style="width:80px"/></div>
+      <button class="btn" style="align-self:flex-end" onclick="commitBaseFoodEditor()">Speichern</button>
+    </div>
+    <div style="margin-top:8px">
+      <button class="btn" style="background:var(--surface2);color:var(--text2);font-size:12px"
+        onclick="document.getElementById('candidate-panel').classList.remove('visible');_baseFoodEditorLabel=null">
+        Abbrechen
+      </button>
+    </div>
+  `;
+  panel.classList.add("visible");
+  setTimeout(() => panel.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+}
+
+function commitBaseFoodEditor() {
+  if (!_baseFoodEditorLabel) return;
+  const kcal100  = parseFloat(document.getElementById("m-kcal")?.value);
+  const prot100  = parseFloat(document.getElementById("m-protein")?.value);
+  const carbs100 = parseFloat(document.getElementById("m-carbs")?.value);
+  const fat100   = parseFloat(document.getElementById("m-fat")?.value);
+
+  if ([kcal100, prot100, carbs100, fat100].some(v => isNaN(v) || v < 0)) {
+    setHint("Bitte alle Nährwerte ausfüllen (≥ 0).", "var(--red)");
+    return;
+  }
+
+  _upsertUserFoodDB(_baseFoodEditorLabel, kcal100, prot100, carbs100, fat100);
+  saveAppData();
+
+  document.getElementById("candidate-panel")?.classList.remove("visible");
+  _baseFoodEditorLabel = null;
+
+  setHint("💾 Nährwerte in Ihrer persönlichen Basis gespeichert.", "var(--blue)");
+}
+
 function _editUserFood(id) {
   const entry = userFoodDB.find(e => e.id === id);
   if (!entry) return;
-  closeBaseDetail();
-  _pendingItem = { name: entry.label, kg: 0, expiry: null, useFrom: null };
-  showManualEntryPrompt(entry.label, 0, null, null);
-  setTimeout(() => {
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-    set("m-kcal",    +(entry.nutrition.kcal    / 10).toFixed(1));
-    set("m-protein", +(entry.nutrition.protein / 10).toFixed(1));
-    set("m-carbs",   +(entry.nutrition.carbs   / 10).toFixed(1));
-    set("m-fat",     +(entry.nutrition.fat     / 10).toFixed(1));
-  }, 50);
+  showBaseFoodEditor(
+    entry.label,
+    +(entry.nutrition.kcal    / 10).toFixed(1),
+    +(entry.nutrition.protein / 10).toFixed(1),
+    +(entry.nutrition.carbs   / 10).toFixed(1),
+    +(entry.nutrition.fat     / 10).toFixed(1)
+  );
 }
 
 function _deleteUserFood(id) {
@@ -11052,17 +11108,14 @@ function _createUserOverride(localKey) {
   const e = LOCAL_FOOD_DB[localKey];
   if (!e) return;
   const displayLabel = e.labelDE || e.label;
-  closeBaseDetail();
-  _pendingItem = { name: displayLabel, kg: 0, expiry: null, useFrom: null };
-  showManualEntryPrompt(displayLabel, 0, null, null);
-  setTimeout(() => {
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-    set("m-kcal",    +(e.nutrition.kcal    / 10).toFixed(1));
-    set("m-protein", +(e.nutrition.protein / 10).toFixed(1));
-    set("m-carbs",   +(e.nutrition.carbs   / 10).toFixed(1));
-    set("m-fat",     +(e.nutrition.fat     / 10).toFixed(1));
-  }, 50);
-  setHint("Werte anpassen und bestätigen — Ihre Version hat Vorrang.", "var(--blue)");
+  showBaseFoodEditor(
+    displayLabel,
+    +(e.nutrition.kcal    / 10).toFixed(1),
+    +(e.nutrition.protein / 10).toFixed(1),
+    +(e.nutrition.carbs   / 10).toFixed(1),
+    +(e.nutrition.fat     / 10).toFixed(1)
+  );
+  setHint("Werte anpassen und speichern — Ihre Version hat Vorrang.", "var(--blue)");
 }
 </script>
 
