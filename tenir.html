@@ -1240,6 +1240,7 @@
         <button onclick="exportAppData()">⬇ Exporter</button>
         <button onclick="document.getElementById('import-file').click()">⬆ Importer</button>
         <button onclick="clearAppData()">Réinitialiser les données</button>
+        <button onclick="resetOnboardingDebug()" style="opacity:.6">↺ Relancer onboarding</button>
       </span>
       <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importAppData(event)"/>
     </div>
@@ -5521,29 +5522,34 @@ function normalizeVoiceFoodInput(raw) {
  */
 function _extractRawName(rawText, normalizedName) {
   if (!rawText || !normalizedName) return normalizedName || "";
-  // Normalisation robuste : accents, umlauts, apostrophes, ponctuation → espaces
   const norm = s => (s||"")
     .toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/['\u2018\u2019\u2032\u0060]/g," ")   // apostrophes → espace
+    .replace(/['\u2018\u2019\u2032\u0060]/g," ")
     .replace(/[^a-z0-9 ]/g," ")
     .replace(/\s+/g," ").trim();
   const normTarget = norm(normalizedName);
+  const targetWords = normTarget.split(" ").filter(Boolean);
+  const rawTokens = rawText.trim().split(/\s+/);
 
-  // Chercher dans le texte BRUT original (avant toute normalisation vocale)
-  // en utilisant une fenêtre glissante sur les caractères (pas les tokens)
-  // pour conserver apostrophes, accents, majuscules dans le résultat
-  const raw = rawText.trim();
-
-  // Construire un index de positions normalisées
-  // Stratégie : segmenter rawText en tokens non-numériques, fenêtre glissante
-  const rawTokens = raw.split(/\s+/);
+  // Passe 1 : correspondance exacte de la séquence normalisée
   for (let len = rawTokens.length; len >= 1; len--) {
     for (let start = 0; start <= rawTokens.length - len; start++) {
       const candidate = rawTokens.slice(start, start + len).join(" ");
       if (norm(candidate) === normTarget) return candidate;
     }
   }
+
+  // Passe 2 : tous les mots-cibles dans une fenêtre contiguë — plus courte d'abord
+  for (let len = targetWords.length; len <= rawTokens.length; len++) {
+    for (let start = 0; start <= rawTokens.length - len; start++) {
+      const window = rawTokens.slice(start, start + len);
+      const windowNorm = norm(window.join(" "));
+      const allPresent = targetWords.every(w => windowNorm.includes(w));
+      if (allPresent) return window.join(" ");
+    }
+  }
+
   // Fallback : capitaliser la première lettre du nom normalisé
   return normalizedName.charAt(0).toUpperCase() + normalizedName.slice(1);
 }
@@ -6877,6 +6883,12 @@ function convertToKg(qty, unit) {
 function commitFoodItem(pending, result) {
   const { name: userInput, qty, unit, kg, expiry, useFrom } = pending;
   const d = result.data;
+
+  console.log("[DIAG commitFoodItem] pending.name (userInput):", userInput);
+  console.log("[DIAG commitFoodItem] pending.rawName:", pending.rawName);
+  console.log("[DIAG commitFoodItem] result.displayName:", result.displayName);
+  console.log("[DIAG commitFoodItem] result.apiProductName:", result.apiProductName);
+  console.log("[DIAG commitFoodItem] name final = result.displayName || userInput:", result.displayName || userInput);
   const location = document.getElementById("session-location")?.value.trim() || null;
   voiceFoodMeta = null;
   const w = document.getElementById("pkg-warning");
@@ -6976,6 +6988,8 @@ function commitFoodItem(pending, result) {
       }
       manualFoods.push({
         id:nextId++, name, qty:`${qty} ${unit}`, unit, kg, expiry,
+        // DIAG — log juste avant le push
+        ...(() => { console.log("[DIAG manualFoods.push] name utilisé:", name, "| userInput:", userInput, "| result.displayName:", result.displayName); return {}; })(),
         useFrom: useFrom || computeDefaultUseFrom(expiry),
         location,
         units,
@@ -7074,6 +7088,7 @@ function showCandidatePanel(candidates, searchResult) {
   panel.scrollIntoView({ behavior:"smooth", block:"center" });
 }
 function showManualEntryPrompt(name, kg, expiry, useFrom) {
+  console.log("[DIAG showManualEntryPrompt] name reçu:", name, "| kg:", kg, "| _pendingItem:", JSON.stringify(_pendingItem));
   const panel = document.getElementById("candidate-panel");
   const list  = document.getElementById("candidate-list");
   if (!panel || !list) return;
@@ -7108,9 +7123,18 @@ function commitManualEntry() {
   const _pendingSnapshot = { ..._pendingItem };
   const _userFoodName    = _pendingSnapshot.name;
 
+  console.log("[DIAG commitManualEntry] _userFoodName:", _userFoodName);
+  console.log("[DIAG commitManualEntry] _pendingSnapshot.rawName:", _pendingSnapshot.rawName);
+  console.log("[DIAG commitManualEntry] _pendingSnapshot complet:", JSON.stringify(_pendingSnapshot));
+
   // Mémoriser dans userFoodDB AVANT commitFoodItem() pour garantir la disponibilité immédiate.
   const _uResult = _upsertUserFoodDB(_userFoodName, kcal100, prot100, carbs100, fat100,
     _pendingSnapshot.rawName || null);
+
+  // rawLabel = texte brut original (avec accents/apostrophes) si disponible
+  const _rawLabel = _pendingSnapshot.rawName || null;
+
+  console.log("[DIAG commitManualEntry] _rawLabel:", _rawLabel);
 
   const manualResult = {
     data:          { kcal:kcal100*10, protein:prot100*10, carbs:carbs100*10, fat:fat100*10 },
@@ -7121,8 +7145,12 @@ function commitManualEntry() {
     source:        "manuel",
     candidates:    [],
     apiProductName: null,
-    displayName:   _userFoodName,
+    displayName:   _rawLabel || _userFoodName,
   };
+
+  console.log("[DIAG commitManualEntry] manualResult.displayName:", manualResult.displayName);
+  console.log("[DIAG commitManualEntry] pendingSnapshot envoyé à commitFoodItem:", JSON.stringify(_pendingSnapshot));
+  console.log("[DIAG commitManualEntry] manualResult envoyé à commitFoodItem:", JSON.stringify(manualResult));
   commitFoodItem(_pendingSnapshot, manualResult);
 
   if (_uResult === "created") {
@@ -10382,6 +10410,15 @@ const WEITER = [
   { next:"cooking", label:"Continuer vers Cuisson \u2192" },
   { next:"summary", label:"Voir mon bilan \u2192" },
 ];
+
+function resetOnboardingDebug() {
+  localStorage.removeItem("tenir_onboarding_done");
+  localStorage.removeItem("tenir_onboarding_step");
+  localStorage.removeItem("tenir_onboarding_demo_pending");
+  localStorage.removeItem("tenir_onboarding_after_demo");
+  localStorage.removeItem("tenir_first_food_entry_fr_done");
+  obOpen();
+}
 
 function obOpen() {
   const ov = document.getElementById("onboarding-overlay");

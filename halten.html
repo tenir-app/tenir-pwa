@@ -1256,6 +1256,7 @@
         <button onclick="exportAppData()">⬇ Exportieren</button>
         <button onclick="document.getElementById('import-file').click()">⬆ Importieren</button>
         <button onclick="clearAppData()">Daten zurücksetzen</button>
+        <button onclick="resetOnboardingDebug()" style="opacity:.6">↺ Onboarding neu starten</button>
       </span>
       <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importAppData(event)"/>
     </div>
@@ -5901,14 +5902,27 @@ function _extractRawName(rawText, normalizedName) {
     .replace(/[^a-z0-9 ]/g," ")
     .replace(/\s+/g," ").trim();
   const normTarget = norm(normalizedName);
-  const raw = rawText.trim();
-  const rawTokens = raw.split(/\s+/);
+  const targetWords = normTarget.split(" ").filter(Boolean);
+  const rawTokens = rawText.trim().split(/\s+/);
+
+  // Passe 1 : correspondance exacte
   for (let len = rawTokens.length; len >= 1; len--) {
     for (let start = 0; start <= rawTokens.length - len; start++) {
       const candidate = rawTokens.slice(start, start + len).join(" ");
       if (norm(candidate) === normTarget) return candidate;
     }
   }
+
+  // Passe 2 : tous les mots-cibles dans une fenêtre contiguë — plus courte d'abord
+  for (let len = targetWords.length; len <= rawTokens.length; len++) {
+    for (let start = 0; start <= rawTokens.length - len; start++) {
+      const window = rawTokens.slice(start, start + len);
+      const windowNorm = norm(window.join(" "));
+      const allPresent = targetWords.every(w => windowNorm.includes(w));
+      if (allPresent) return window.join(" ");
+    }
+  }
+
   return normalizedName.charAt(0).toUpperCase() + normalizedName.slice(1);
 }
 
@@ -7482,6 +7496,8 @@ function commitManualEntry() {
   const _uResult = _upsertUserFoodDB(userFoodName, kcal100, prot100, carbs100, fat100,
     pendingSnapshot.rawName || null);
 
+  const _rawLabel = pendingSnapshot.rawName || null;
+
   const manualResult = {
     data:          { kcal:kcal100*10, protein:prot100*10, carbs:carbs100*10, fat:fat100*10 },
     dataSource:    "manual",
@@ -7491,7 +7507,7 @@ function commitManualEntry() {
     source:        "manuell",
     candidates:    [],
     apiProductName: null,
-    displayName:   userFoodName,
+    displayName:   _rawLabel || userFoodName,
   };
   commitFoodItem(pendingSnapshot, manualResult);
 
@@ -10777,6 +10793,15 @@ const WEITER = [
   { next:"cooking", label:"Weiter zu Kochen →" },
   { next:"summary", label:"Zur Bilanz →" },
 ];
+
+function resetOnboardingDebug() {
+  localStorage.removeItem("tenir_onboarding_done");
+  localStorage.removeItem("tenir_onboarding_step");
+  localStorage.removeItem("tenir_onboarding_demo_pending");
+  localStorage.removeItem("tenir_onboarding_after_demo");
+  localStorage.removeItem("tenir_first_food_entry_de_done");
+  obOpen();
+}
 
 function obOpen() {
   const ov = document.getElementById("onboarding-overlay");
