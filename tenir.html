@@ -10410,11 +10410,39 @@ function obInjectWeiter(panelId, step) {
 let _baseFilter = "all";  // "all" | "tenir" | "user"
 
 function openBaseModal() {
-  document.getElementById("base-overlay").classList.add("open");
+  const overlay = document.getElementById("base-overlay");
+  overlay.classList.add("open");
   document.getElementById("base-search").value = "";
   _baseFilter = "all";
   _updateBaseFilterBtns();
   renderBaseList();
+
+  // Listener délégué sur la liste — robuste iOS Safari (data-key/data-source)
+  const list = document.getElementById("base-list");
+  if (list && !list._baseDelegated) {
+    list._baseDelegated = true;
+    list.addEventListener("click", function(e) {
+      const row = e.target.closest(".base-item[data-key]");
+      if (row) _openBaseDetail(row.dataset.key, row.dataset.source);
+    });
+  }
+
+  // Listener délégué sur les boutons d'action de la fiche détail
+  const detail = document.getElementById("base-detail");
+  if (detail && !detail._baseDelegated) {
+    detail._baseDelegated = true;
+    detail.addEventListener("click", function(e) {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const key    = detail.dataset.key;
+      const source = detail.dataset.source;
+      if (action === "close")    { closeBaseDetail(); }
+      else if (action === "edit")     { _editUserFood(key); }
+      else if (action === "delete")   { _deleteUserFood(key); }
+      else if (action === "override") { _createUserOverride(key); }
+    });
+  }
 }
 
 function closeBaseModal() {
@@ -10501,7 +10529,7 @@ function renderBaseList() {
     let badgeClass = "base-badge-tenir", badgeLabel = "Standard";
     if (it.source === "user" && it.prio)  { badgeClass = "base-badge-prio";  badgeLabel = "Personnel ★"; }
     else if (it.source === "user")         { badgeClass = "base-badge-user";  badgeLabel = "Personnel"; }
-    return `<div class="base-item" onclick="_openBaseDetail(${JSON.stringify(it.key)},${JSON.stringify(it.source)})">
+    return `<div class="base-item" data-key="${_esc(it.key)}" data-source="${_esc(it.source)}">
       <div class="base-item-name">${_esc(it.label)}</div>
       <div class="base-item-right">
         <span class="base-item-kcal">${it.kcal} kcal</span>
@@ -10548,22 +10576,23 @@ function _openBaseDetail(key, source) {
   document.getElementById("bd-carbs").textContent  = carbs;
   document.getElementById("bd-fat").textContent    = fat;
 
-  // Actions
+  // Actions — data-action pour éviter onclick avec guillemets (Safari iOS)
   const actions = document.getElementById("bd-actions");
   if (source === "user") {
     actions.innerHTML = `
-      <button class="bd-btn bd-btn-primary"   onclick="_editUserFood(${JSON.stringify(key)})">✏️ Modifier</button>
-      <button class="bd-btn bd-btn-danger"    onclick="_deleteUserFood(${JSON.stringify(key)})">Supprimer</button>
-      <button class="bd-btn bd-btn-secondary" onclick="closeBaseDetail()">Fermer</button>`;
+      <button class="bd-btn bd-btn-primary"   data-action="edit">✏️ Modifier</button>
+      <button class="bd-btn bd-btn-danger"    data-action="delete">Supprimer</button>
+      <button class="bd-btn bd-btn-secondary" data-action="close">Fermer</button>`;
   } else {
     actions.innerHTML = `
-      <button class="bd-btn bd-btn-primary"   onclick="_createUserOverride(${JSON.stringify(key)})">Créer ma version</button>
-      <button class="bd-btn bd-btn-secondary" onclick="closeBaseDetail()">Fermer</button>`;
+      <button class="bd-btn bd-btn-primary"   data-action="override">Créer ma version</button>
+      <button class="bd-btn bd-btn-secondary" data-action="close">Fermer</button>`;
   }
 
-  // Stocker pour les actions
-  document.getElementById("base-detail").dataset.key    = key;
-  document.getElementById("base-detail").dataset.source = source;
+  // Stocker pour le listener délégué
+  const detail = document.getElementById("base-detail");
+  detail.dataset.key    = key;
+  detail.dataset.source = source;
   document.getElementById("base-detail-overlay").classList.add("open");
 }
 

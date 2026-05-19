@@ -10882,11 +10882,39 @@ function obInjectWeiter(panelId, step) {
 let _baseFilter = "all";
 
 function openBaseModal() {
-  document.getElementById("base-overlay").classList.add("open");
+  const overlay = document.getElementById("base-overlay");
+  overlay.classList.add("open");
   document.getElementById("base-search").value = "";
   _baseFilter = "all";
   _updateBaseFilterBtns();
   renderBaseList();
+
+  // Listener délégué sur la liste — robuste iOS Safari
+  const list = document.getElementById("base-list");
+  if (list && !list._baseDelegated) {
+    list._baseDelegated = true;
+    list.addEventListener("click", function(e) {
+      const row = e.target.closest(".base-item[data-key]");
+      if (row) _openBaseDetail(row.dataset.key, row.dataset.source);
+    });
+  }
+
+  // Listener délégué sur les boutons d'action de la fiche détail
+  const detail = document.getElementById("base-detail");
+  if (detail && !detail._baseDelegated) {
+    detail._baseDelegated = true;
+    detail.addEventListener("click", function(e) {
+      const btn = e.target.closest("button[data-action]");
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const key    = detail.dataset.key;
+      const source = detail.dataset.source;
+      if (action === "close")         { closeBaseDetail(); }
+      else if (action === "edit")     { _editUserFood(key); }
+      else if (action === "delete")   { _deleteUserFood(key); }
+      else if (action === "override") { _createUserOverride(key); }
+    });
+  }
 }
 
 function closeBaseModal() {
@@ -10954,7 +10982,7 @@ function renderBaseList() {
     let badgeClass = "base-badge-tenir", badgeLabel = "Standard";
     if (it.source === "user" && it.prio)  { badgeClass = "base-badge-prio"; badgeLabel = "Eigene ★"; }
     else if (it.source === "user")        { badgeClass = "base-badge-user"; badgeLabel = "Eigene"; }
-    return `<div class="base-item" onclick="_openBaseDetail(${JSON.stringify(it.key)},${JSON.stringify(it.source)})">
+    return `<div class="base-item" data-key="${_esc(it.key)}" data-source="${_esc(it.source)}">
       <div class="base-item-name">${_esc(it.label)}</div>
       <div class="base-item-right">
         <span class="base-item-kcal">${it.kcal} kcal</span>
@@ -11004,17 +11032,18 @@ function _openBaseDetail(key, source) {
   const actions = document.getElementById("bd-actions");
   if (source === "user") {
     actions.innerHTML = `
-      <button class="bd-btn bd-btn-primary"   onclick="_editUserFood(${JSON.stringify(key)})">✏️ Bearbeiten</button>
-      <button class="bd-btn bd-btn-danger"    onclick="_deleteUserFood(${JSON.stringify(key)})">Löschen</button>
-      <button class="bd-btn bd-btn-secondary" onclick="closeBaseDetail()">Schließen</button>`;
+      <button class="bd-btn bd-btn-primary"   data-action="edit">✏️ Bearbeiten</button>
+      <button class="bd-btn bd-btn-danger"    data-action="delete">Löschen</button>
+      <button class="bd-btn bd-btn-secondary" data-action="close">Schließen</button>`;
   } else {
     actions.innerHTML = `
-      <button class="bd-btn bd-btn-primary"   onclick="_createUserOverride(${JSON.stringify(key)})">Eigene Version erstellen</button>
-      <button class="bd-btn bd-btn-secondary" onclick="closeBaseDetail()">Schließen</button>`;
+      <button class="bd-btn bd-btn-primary"   data-action="override">Eigene Version erstellen</button>
+      <button class="bd-btn bd-btn-secondary" data-action="close">Schließen</button>`;
   }
 
-  document.getElementById("base-detail").dataset.key    = key;
-  document.getElementById("base-detail").dataset.source = source;
+  const detail = document.getElementById("base-detail");
+  detail.dataset.key    = key;
+  detail.dataset.source = source;
   document.getElementById("base-detail-overlay").classList.add("open");
 }
 
