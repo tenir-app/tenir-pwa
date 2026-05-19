@@ -3442,7 +3442,7 @@ function _searchUserFoodDB(query) {
  * Ne rien faire si nom trop court, générique, ou macros invalides.
  * Retourne "created" | "updated" | "skipped".
  */
-function _upsertUserFoodDB(name, kcal100, protein100, carbs100, fat100) {
+function _upsertUserFoodDB(name, kcal100, protein100, carbs100, fat100, rawLabel) {
   // Rejeter noms trop courts ou génériques
   const GENERIC_NAMES = /^(barre|produit|aliment|food|item|autre|inconnu|test|truc|chose)$/i;
   const trimmed = (name || "").trim();
@@ -3452,19 +3452,24 @@ function _upsertUserFoodDB(name, kcal100, protein100, carbs100, fat100) {
 
   const normKey = _normUserKey(trimmed);
   const alias   = normKey;
+  // Préférer rawLabel (texte original avec accents/casse) si fourni, sinon capitaliser
+  const displayLabel = (rawLabel && rawLabel.trim())
+    ? rawLabel.trim()
+    : trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
   const existing = userFoodDB.find(e => _normUserKey(e.label) === normKey);
 
   if (existing) {
-    // Mettre à jour les macros et compléter les alias
     existing.nutrition = { kcal: kcal100 * 10, protein: protein100 * 10, carbs: carbs100 * 10, fat: fat100 * 10 };
     existing.updatedAt = new Date().toISOString();
+    // Mettre à jour le label si le nouveau est plus riche (accents présents)
+    if (rawLabel && rawLabel.trim()) existing.label = rawLabel.trim();
     if (!existing.aliases.includes(alias)) existing.aliases.push(alias);
     return "updated";
   } else {
     const id = "user_" + normKey.replace(/ /g, "_").slice(0, 40) + "_" + Date.now().toString(36);
     userFoodDB.push({
       id,
-      label:     trimmed,
+      label:     displayLabel,
       aliases:   [alias],
       nutrition: { kcal: kcal100 * 10, protein: protein100 * 10, carbs: carbs100 * 10, fat: fat100 * 10 },
       category:  "user",
@@ -4441,7 +4446,15 @@ function loadAppData() {
     const ALLOWED_TARGETS = [3, 7, 14, 30, 60, 90];
     if (typeof saved.resilienceTargetDays === "number" && ALLOWED_TARGETS.includes(saved.resilienceTargetDays))
       resilienceTargetDays = saved.resilienceTargetDays;
-    if (Array.isArray(saved.userFoodDB)) userFoodDB = saved.userFoodDB;
+    if (Array.isArray(saved.userFoodDB)) {
+      userFoodDB = saved.userFoodDB;
+      // Migration : capitaliser les labels entièrement en minuscules (anciens produits)
+      userFoodDB.forEach(e => {
+        if (e.label && e.label === e.label.toLowerCase()) {
+          e.label = e.label.charAt(0).toUpperCase() + e.label.slice(1);
+        }
+      });
+    }
     auditInventoryConsistency();
   } catch (err) {
     console.warn("[loadAppData] Données corrompues, réinitialisation :", err);
@@ -5500,6 +5513,41 @@ function normalizeVoiceFoodInput(raw) {
  * depuis une phrase dictée ou saisie rapide.
  * Retourne null si la quantité est absente ou ambiguë.
  */
+/**
+ * _extractRawName(originalInput, normalizedName)
+ * Tente de retrouver le fragment original (avec accents/casse) depuis l'input brut
+ * qui correspond au nom normalisé extrait par le parsing.
+ * Fallback : capitalise la première lettre du nom normalisé.
+ */
+function _extractRawName(rawText, normalizedName) {
+  if (!rawText || !normalizedName) return normalizedName || "";
+  // Normalisation robuste : accents, umlauts, apostrophes, ponctuation → espaces
+  const norm = s => (s||"")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/['\u2018\u2019\u2032\u0060]/g," ")   // apostrophes → espace
+    .replace(/[^a-z0-9 ]/g," ")
+    .replace(/\s+/g," ").trim();
+  const normTarget = norm(normalizedName);
+
+  // Chercher dans le texte BRUT original (avant toute normalisation vocale)
+  // en utilisant une fenêtre glissante sur les caractères (pas les tokens)
+  // pour conserver apostrophes, accents, majuscules dans le résultat
+  const raw = rawText.trim();
+
+  // Construire un index de positions normalisées
+  // Stratégie : segmenter rawText en tokens non-numériques, fenêtre glissante
+  const rawTokens = raw.split(/\s+/);
+  for (let len = rawTokens.length; len >= 1; len--) {
+    for (let start = 0; start <= rawTokens.length - len; start++) {
+      const candidate = rawTokens.slice(start, start + len).join(" ");
+      if (norm(candidate) === normTarget) return candidate;
+    }
+  }
+  // Fallback : capitaliser la première lettre du nom normalisé
+  return normalizedName.charAt(0).toUpperCase() + normalizedName.slice(1);
+}
+
 function parseQuickFoodInput(text) {
   if (!text || text.length < 3) return null;
 
@@ -5611,6 +5659,7 @@ function parseQuickFoodInput(text) {
       if (!_name0) return null;
       console.log("[mal×poids] count:", _count0, "| weight:", _weight0, "| total:", _count0*_weight0, "| unit:", _unitFin0, "| prod:", _name0);
       return { name: _name0, qty: _count0 * _weight0, unit: _unitFin0, expiry: _exp0,
+               rawName: _extractRawName(text, _name0),
                count: _count0, unitWeightKg: _unitFin0 === "kg" || _unitFin0 === "L" ? _weight0 : _weight0 / 1000 };
     }
   }
@@ -5655,6 +5704,7 @@ function parseQuickFoodInput(text) {
         if (!_name1) return null;
         console.log("[produit×mal] count:", _count1, "| weight:", _weight1, "| total:", _count1*_weight1, "| unit:", _unitFin1, "| prod:", _name1);
         return { name: _name1, qty: _count1 * _weight1, unit: _unitFin1, expiry: _exp1,
+                 rawName: _extractRawName(text, _name1),
                  count: _count1, unitWeightKg: _unitFin1 === "kg" || _unitFin1 === "L" ? _weight1 : _weight1 / 1000 };
       }
     }
@@ -5713,6 +5763,7 @@ function parseQuickFoodInput(text) {
       let _name = _rawProd.replace(_pkgNoise," ").replace(/[,;.]/g," ").replace(/\d+/g," ").replace(/\s+/g," ").trim();
       if (!_name) return null;
       return { name: _name, qty: _count * _unitWeight, unit: _unitFinal, expiry: _expiry,
+               rawName: _extractRawName(text, _name),
                count: _count, unitWeightKg: _unitFinal === "kg" || _unitFinal === "L" ? _unitWeight : _unitWeight / 1000 };
     }
   }
@@ -5984,6 +6035,7 @@ function parseQuickFoodInput(text) {
 
   return {
     name, qty, unit, expiry,
+    rawName: _extractRawName(text, name),
     count:        (_oeufOverride ? _oeufCount : _gpOverride ? _gpCount : null),
     unitWeightKg: (_oeufOverride ? 53/1000    : _gpOverride ? 300/1000 : null),
   };
@@ -6234,6 +6286,7 @@ function analyzeQuickInput() {
     voiceFoodMeta = {
       count:         parsed.count         || null,
       unitWeightKg:  parsed.unitWeightKg  || null,
+      rawName:       parsed.rawName       || null,
     };
     checkPackageWarning();
     if (details && !_scanMode) details.open = true;
@@ -6378,6 +6431,7 @@ async function addFoodItem() {
       name, qty, unit, kg, expiry, useFrom,
       count:        voiceFoodMeta?.count        || null,
       unitWeightKg: voiceFoodMeta?.unitWeightKg || null,
+      rawName:      voiceFoodMeta?.rawName      || null,
     };
 
     // -- CAS 1 : aucune donnée trouvée --------------------------
@@ -7055,7 +7109,8 @@ function commitManualEntry() {
   const _userFoodName    = _pendingSnapshot.name;
 
   // Mémoriser dans userFoodDB AVANT commitFoodItem() pour garantir la disponibilité immédiate.
-  const _uResult = _upsertUserFoodDB(_userFoodName, kcal100, prot100, carbs100, fat100);
+  const _uResult = _upsertUserFoodDB(_userFoodName, kcal100, prot100, carbs100, fat100,
+    _pendingSnapshot.rawName || null);
 
   const manualResult = {
     data:          { kcal:kcal100*10, protein:prot100*10, carbs:carbs100*10, fat:fat100*10 },
