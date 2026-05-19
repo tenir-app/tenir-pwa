@@ -8488,14 +8488,10 @@ function clearDemoInventory() {
   renderWater();
   renderFoyer();
   renderSummary();
-  runSummaryReveal(true);
-  // Hook onboarding : si démo lancée via la modale → reload vers Haushalt
-  if (localStorage.getItem("tenir_onboarding_demo_pending") === "1") {
-    localStorage.removeItem("tenir_onboarding_demo_pending");
-    localStorage.setItem("tenir_onboarding_after_demo", "foyer");
-    localStorage.setItem("tenir_onboarding_step", "1");
-    location.reload();
-  }
+  // Basculer vers Haushalt et activer le parcours guidé réel
+  localStorage.setItem("tenir_onboarding_step", "1");
+  switchTab("foyer");
+  obInjectWeiter("foyer", 1);
 }
 /**
  * loadDemoInventory() — charge 8 produits réalistes pour la démo commerciale.
@@ -10679,8 +10675,9 @@ if (!DEBUG_MODE) {
     <button class="ob-btn-primary" onclick="
       document.getElementById('onboarding-overlay').classList.remove('open');
       localStorage.setItem('tenir_onboarding_done','1');
-      localStorage.setItem('tenir_onboarding_demo_pending','1');
       loadDemoInventory();
+      switchTab('summary');
+      requestAnimationFrame(() => { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); });
     ">
       Demo ansehen →
       <span class="ob-btn-label">Beispielvorrat erkunden, bevor Sie Ihre eigenen Daten eingeben</span>
