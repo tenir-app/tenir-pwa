@@ -1824,8 +1824,12 @@ const LOCAL_FOOD_DB = {
   },
   "pois_chiches_cuits": {
     label: "Pois chiches (en conserve)", labelDE: "Kichererbsen (Konserve)",
-    aliases: ["pois chiches en conserve","pois chiches boite","pois chiches boîte",
-              "pois chiches cuits",
+    aliases: ["pois chiches en conserve","pois chiches conserve",
+              "pois chiche en conserve","pois chiche conserve",
+              "pois chiches boite","pois chiches boîte",
+              "boite de pois chiches","boîte de pois chiches",
+              "bocal de pois chiches","bocal pois chiches",
+              "pois chiches cuits","pois chiche cuit","pois chiche cuits",
               "kichererbsen dose","kichererbsen gekocht","kichererbsen eingeweicht",
               "chickpeas canned","canned chickpeas","cooked chickpeas"],
     category: "legumineuse", state: "ready", requiresCooking: false,
@@ -6586,6 +6590,9 @@ function analyzeQuickInput() {
   let raw = input.value.trim();
   if (!raw) { feedback.textContent = ""; return; }
 
+  // Conserver le texte brut original AVANT toute normalisation
+  const rawOriginal = raw;
+
   // Pré-traitement : normalisation des nombres en lettres et ponctuation iOS
   const _NUM_FR = {
     // Français
@@ -6630,9 +6637,11 @@ function analyzeQuickInput() {
   const details = document.querySelector(".classic-form-details");
 
   if (parsed && parsed.unit && parsed.name) {
-    // rawName = texte brut original si disponible, sinon dériver depuis l'input complet
-    const _rawNameResolved = parsed.rawName
-      || _extractRawName(raw, parsed.name)
+    // rawName = texte brut original si disponible, sinon dériver depuis rawOriginal (avec accents)
+    const _rawNameResolved =
+      _extractRawName(rawOriginal, parsed.name)
+      || parsed.rawName
+      || rawOriginal
       || parsed.name;
 
     // Résoudre le nom canonique dès la prévisualisation
@@ -6645,12 +6654,14 @@ function analyzeQuickInput() {
     // Simuler la recherche que addFoodItem fera avec _canonicalName
     // (addFoodItem utilise f-name.value = _canonicalName, pas parsed.name)
     const _qResultFinal = getFoodDataSync(_canonicalName);
-    // Détecter un match ambigu en se basant sur le résultat final
+    // Détecter un match ambigu — si _qResult est déjà exact, pas d'ambiguïté possible
     const _willOpenCandidates = (r) => !!(r && (
       (r.data === null && r.matchType === "none" && r.candidates && r.candidates.length > 0) ||
       (r.matchType === "partial" && r.candidates && r.candidates.length > 1)
     ));
-    const _ambiguous = _willOpenCandidates(_qResultFinal) || _willOpenCandidates(_qResult);
+    const _ambiguous = _qResult && _qResult.matchType === "exact"
+      ? false
+      : (_willOpenCandidates(_qResultFinal) || _willOpenCandidates(_qResult));
     // Stocker les candidats pour scanConfirm si ambigu
     const _activeResult = (_willOpenCandidates(_qResultFinal) ? _qResultFinal : _qResult);
     const _candidates   = (_ambiguous && _activeResult) ? (_activeResult.candidates || []) : [];
@@ -7536,7 +7547,12 @@ function commitManualEntry() {
 
 function addFoodManually() {
   if (!_pendingItem) return;
-  showManualEntryPrompt(_pendingItem.name, _pendingItem.kg, _pendingItem.expiry, _pendingItem.useFrom);
+  showManualEntryPrompt(
+    _pendingItem.rawName || _pendingItem.displayName || _pendingItem.name,
+    _pendingItem.kg,
+    _pendingItem.expiry,
+    _pendingItem.useFrom
+  );
 }
 
 function deleteUnitFromItem(itemId, unitIdx) {

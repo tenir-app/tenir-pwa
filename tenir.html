@@ -1802,8 +1802,12 @@ const LOCAL_FOOD_DB = {
   },
   "pois_chiches_cuits": {
     label: "Pois chiches (en conserve)",
-    aliases: ["pois chiches en conserve","pois chiches boite","pois chiches boîte",
-              "pois chiches cuits",
+    aliases: ["pois chiches en conserve","pois chiches conserve",
+              "pois chiche en conserve","pois chiche conserve",
+              "pois chiches boite","pois chiches boîte",
+              "boite de pois chiches","boîte de pois chiches",
+              "bocal de pois chiches","bocal pois chiches",
+              "pois chiches cuits","pois chiche cuit","pois chiche cuits",
               "kichererbsen dose","kichererbsen gekocht","kichererbsen eingeweicht",
               "chickpeas canned","canned chickpeas","cooked chickpeas"],
     category: "legumineuse", state: "ready", requiresCooking: false,
@@ -3444,7 +3448,6 @@ function _searchUserFoodDB(query) {
  * Retourne "created" | "updated" | "skipped".
  */
 function _upsertUserFoodDB(name, kcal100, protein100, carbs100, fat100, rawLabel) {
-  console.log("[DIAG2 _upsertUserFoodDB] name:", name, "| rawLabel:", rawLabel);
   // Rejeter noms trop courts ou génériques
   const GENERIC_NAMES = /^(barre|produit|aliment|food|item|autre|inconnu|test|truc|chose)$/i;
   const trimmed = (name || "").trim();
@@ -3458,7 +3461,6 @@ function _upsertUserFoodDB(name, kcal100, protein100, carbs100, fat100, rawLabel
   const displayLabel = (rawLabel && rawLabel.trim())
     ? rawLabel.trim()
     : trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-  console.log("[DIAG2 _upsertUserFoodDB] trimmed:", trimmed, "| normKey:", normKey, "| displayLabel:", displayLabel);
   const existing = userFoodDB.find(e => _normUserKey(e.label) === normKey);
 
   if (existing) {
@@ -6221,6 +6223,9 @@ function analyzeQuickInput() {
   let raw = input.value.trim();
   if (!raw) { feedback.textContent = ""; return; }
 
+  // Conserver le texte brut original AVANT toute normalisation
+  const rawOriginal = raw;
+
   // Pré-traitement : normalisation des nombres en lettres et ponctuation iOS
   const _NUM_FR = {
     // Français
@@ -6265,9 +6270,11 @@ function analyzeQuickInput() {
   const details = document.querySelector(".classic-form-details");
 
   if (parsed && parsed.unit && parsed.name) {
-    // rawName = texte brut original si disponible, sinon dériver depuis l'input complet
-    const _rawNameResolved = parsed.rawName
-      || _extractRawName(raw, parsed.name)
+    // rawName = texte brut original si disponible, sinon dériver depuis rawOriginal (avec accents)
+    const _rawNameResolved =
+      _extractRawName(rawOriginal, parsed.name)
+      || parsed.rawName
+      || rawOriginal
       || parsed.name;
 
     // Résoudre le nom canonique dès la prévisualisation
@@ -6278,10 +6285,13 @@ function analyzeQuickInput() {
     const _canonicalName = _displayName;
     // Vérifier d'abord les candidats forcés (ex: pois chiches sans précision)
     const _forcedKeys = getForcedCandidateKeysForQuery(parsed.name);
-    const _ambiguous_base = !!(_qResult && (
-      (_qResult.data === null && _qResult.matchType === "none" && _qResult.candidates && _qResult.candidates.length > 0) ||
-      (_qResult.matchType === "partial" && _qResult.candidates && _qResult.candidates.length > 1)
-    ));
+    // Si _qResult est un match exact, pas d'ambiguïté possible
+    const _ambiguous_base = _qResult && _qResult.matchType === "exact"
+      ? false
+      : !!(_qResult && (
+          (_qResult.data === null && _qResult.matchType === "none" && _qResult.candidates && _qResult.candidates.length > 0) ||
+          (_qResult.matchType === "partial" && _qResult.candidates && _qResult.candidates.length > 1)
+        ));
     const _ambiguous = _ambiguous_base || !!_forcedKeys;
     // Feedback : générique normalisé si ambigu, sinon displayName canonique
     const _feedbackName = _ambiguous ? _rawNameResolved : _displayName;
@@ -7093,7 +7103,6 @@ function showCandidatePanel(candidates, searchResult) {
   panel.scrollIntoView({ behavior:"smooth", block:"center" });
 }
 function showManualEntryPrompt(name, kg, expiry, useFrom) {
-  console.log("[DIAG2 showManualEntryPrompt] name reçu:", name, "| _pendingItem.rawName:", _pendingItem?.rawName);
   const panel = document.getElementById("candidate-panel");
   const list  = document.getElementById("candidate-list");
   if (!panel || !list) return;
@@ -7128,10 +7137,6 @@ function commitManualEntry() {
   const _pendingSnapshot = { ..._pendingItem };
   const _userFoodName    = _pendingSnapshot.name;
 
-  console.log("[DIAG2 commitManualEntry] _pendingSnapshot.name:", _pendingSnapshot.name);
-  console.log("[DIAG2 commitManualEntry] _pendingSnapshot.rawName:", _pendingSnapshot.rawName);
-  console.log("[DIAG2 commitManualEntry] _userFoodName (→ _upsertUserFoodDB):", _userFoodName);
-  console.log("[DIAG2 commitManualEntry] rawName passé à _upsertUserFoodDB:", _pendingSnapshot.rawName || null);
 
   // Mémoriser dans userFoodDB AVANT commitFoodItem() pour garantir la disponibilité immédiate.
   const _uResult = _upsertUserFoodDB(_userFoodName, kcal100, prot100, carbs100, fat100,
@@ -7168,10 +7173,12 @@ function commitManualEntry() {
 
 function addFoodManually() {
   if (!_pendingItem) return;
-  console.log("[DIAG2 addFoodManually] _pendingItem.name:", _pendingItem.name);
-  console.log("[DIAG2 addFoodManually] _pendingItem.rawName:", _pendingItem.rawName);
-  console.log("[DIAG2 addFoodManually] → passe à showManualEntryPrompt:", _pendingItem.name, "(rawName disponible:", _pendingItem.rawName, ")");
-  showManualEntryPrompt(_pendingItem.name, _pendingItem.kg, _pendingItem.expiry, _pendingItem.useFrom);
+  showManualEntryPrompt(
+    _pendingItem.rawName || _pendingItem.displayName || _pendingItem.name,
+    _pendingItem.kg,
+    _pendingItem.expiry,
+    _pendingItem.useFrom
+  );
 }
 
 function deleteUnitFromItem(itemId, unitIdx) {
@@ -10558,7 +10565,6 @@ function _updateBaseFilterBtns() {
 }
 
 function renderBaseList() {
-  console.log("[DIAG2 renderBaseList] userFoodDB labels:", userFoodDB.map(e => e.label));
   const q = (document.getElementById("base-search")?.value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
   const container = document.getElementById("base-list");
   if (!container) return;
