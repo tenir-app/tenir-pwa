@@ -835,6 +835,10 @@
       background:var(--surface); color:var(--red); font-size:11px; cursor:pointer; }
     .save-bar button:hover { background:var(--red-bg); }
 
+    /* iOS Safari — anti-zoom : font-size ≥16px empêche le zoom automatique sur les champs */
+    @media(max-width:540px) {
+      input, select, textarea { font-size:16px !important; }
+    }
     @media(max-width:540px){
       .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
       /* Onglets compactés sur mobile */
@@ -1771,7 +1775,7 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
   },
   "lentilles_rouges_seches": {
-    label: "Lentilles rouges (sèches)", labelDE: "Rote Linsen (trocken)",
+    label: "Lentilles rouges / corail (sèches)", labelDE: "Rote Linsen (trocken)",
     aliases: ["lentilles rouges seches","lentilles rouges sec","red split lentils"],
     category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium", generic: [],
@@ -1813,6 +1817,25 @@ const LOCAL_FOOD_DB = {
     generic: ["lentilles","linsen","lentils"],
     nutrition: { kcal:3250, protein:245, carbs:580, fat:10 },
   },
+  "lentilles_cuites_conserve": {
+    label: "Lentilles cuites / en conserve", labelDE: "Linsen gekocht / Konserve",
+    aliases: [
+      "lentilles cuites","lentilles en conserve","lentille en conserve",
+      "lentilles conserve","lentille conserve",
+      "lentilles boite","lentilles boîte",
+      "boite de lentilles","boîte de lentilles",
+      "lentilles bocal","bocal de lentilles",
+      "lentilles deja cuites","lentilles déjà cuites",
+      "linsen gekocht","gekochte linsen",
+      "linsen konserviert","linsen konserve",
+      "linsen dose","dosenlinsen",
+      "linsen im glas","glas linsen","fertige linsen",
+    ],
+    category: "legumineuse", state: "ready", requiresCooking: false,
+    waterNeed: "none", energyNeed: "none", generic: [],
+    nutrition: { kcal:1050, protein:85, carbs:165, fat:5 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "1 jour",
+  },
   "pois_chiches_secs": {
     label: "Pois chiches (secs)", labelDE: "Kichererbsen (trocken)",
     aliases: ["pois chiches secs","pois chiches sec","kichererbsen trocken",
@@ -1850,7 +1873,9 @@ const LOCAL_FOOD_DB = {
   "haricots_rouges_secs": {
     label: "Haricots rouges (secs)",
     labelDE: "Kidneybohnen (trocken)",
-    aliases: ["haricots rouges secs","haricots rouges sec","rote bohnen trocken","dried kidney beans","kidney beans dry"],
+    aliases: ["haricots rouges secs","haricots rouges sec","rote bohnen trocken",
+              "kidneybohnen trocken","kidneybohnen getrocknet","getrocknete kidneybohnen",
+              "dried kidney beans","kidney beans dry"],
     category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium", generic: [],
     nutrition: { kcal:3330, protein:220, carbs:600, fat:10 },
@@ -1860,8 +1885,9 @@ const LOCAL_FOOD_DB = {
     label: "Haricots rouges (en conserve)", labelDE: "Kidneybohnen (Konserve)",
     aliases: ["haricots rouges en conserve","haricots rouges boite","haricots rouges boîte",
               "haricots rouges cuits",
-              "rote bohnen dose","rote bohnen",
-              "kidney bohnen","kidneybohnen","kidney bohnen dose","kidneybohnen dose",
+              "rote bohnen dose",
+              "kidney bohnen dose","kidneybohnen dose",
+              "kidneybohnen konserve","kidneybohnen in der dose",
               "kidney bohnen konserviert","kidneybohnen gekocht",
               "kidney beans canned","canned kidney beans","red kidney beans canned"],
     category: "legumineuse", state: "ready", requiresCooking: false,
@@ -1876,7 +1902,7 @@ const LOCAL_FOOD_DB = {
               "kidney bohnen","kidneybohnen"],
     category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium",
-    generic: ["haricots rouges","haricots","bohnen","beans"],
+    generic: ["haricots rouges","haricots","bohnen","beans","kidneybohnen","kidney bohnen"],
     nutrition: { kcal:900, protein:85, carbs:140, fat:5 },
   },
 
@@ -3716,9 +3742,7 @@ const LOCAL_QUERY_REDIRECTS = {
   "kartoffelpuree":               "puree instantanee",
   "dha":                          "huile d algues",
   "omega 3":                      "huile d algues",
-  // Haricots rouges allemand
-  "kidney bohnen":                "haricots rouges en conserve",
-  "kidneybohnen":                 "haricots rouges en conserve",
+  // Haricots rouges allemand (qualifiés seulement — nu = ambigu)
   "kidney bohnen dose":           "haricots rouges en conserve",
   "kidneybohnen dose":            "haricots rouges en conserve",
   // Soja allemand
@@ -6483,13 +6507,29 @@ function getForcedCandidateKeysForQuery(rawName) {
   }
   if (/kidneybohne/.test(n) || /kidney\s*bohne/.test(n) || /kidney\s*bean/.test(n) ||
       /rote\s*bohne/.test(n) || /haricots?\s*rouge/.test(n)) {
-    return ["haricots_rouges_secs", "haricots_rouges_cuits"];
+    const isClearDry = /\b(trocken|dried|sec|secs)\b/.test(n);
+    const isClearCan = /\b(dose|konserve|gekocht|conserve|boite|cuit|cuits)\b/.test(n);
+    if (isClearDry) return null;
+    if (isClearCan) return ["haricots_rouges_cuits"];
+    return ["haricots_rouges_secs","haricots_rouges_cuits"];
+  }
+  // Lentilles — sélection enrichie selon qualificateur
+  if (/^lentille/.test(n) || /\blinsen\b/.test(n)) {
+    const isClearDry = /\b(sec|secs|seche|seches|trocken|dried)\b/.test(n);
+    const isClearCan = /\b(cuite|cuites|conserve|boite|bocal|dose|konserve|gekocht)\b/.test(n);
+    const isClearPlat = /\b(eintopf|topf|soupe|ragout|gemuese|gemuse|legumes?)\b/.test(n);
+    if (isClearPlat) return ["linsen_gemuese_topf"];
+    if (isClearCan)  return ["lentilles_cuites_conserve"];
+    if (isClearDry)  return null;
+    return ["lentilles_vertes_seches","lentilles_rouges_seches",
+            "lentilles_cuites_conserve","linsen_gemuese_topf"];
   }
   return null;
 }
 
 async function scanConfirm() {
   if (!_scanParsed) return;
+  document.activeElement?.blur(); // iOS : fermer clavier après validation
 
   // Sécurité : si le bouton affichait "Auswahl öffnen", ne jamais ajouter directement
   if (_scanParsed._ambiguous) {
@@ -7542,6 +7582,7 @@ function commitManualEntry() {
       "var(--blue)"
     ), 200);
   }
+  document.activeElement?.blur(); // iOS : fermer clavier après validation
   saveAppData();
 }
 
@@ -7790,6 +7831,7 @@ function addWaterItem() {
   if (wdEl)   wdEl.value = "";
   if (wdWrap) wdWrap.style.display = "none";
   hint.textContent = "";
+  document.activeElement?.blur(); // iOS : fermer clavier
   renderWater();
   saveAppData();
 }
@@ -9741,6 +9783,7 @@ function addPerson() {
   document.getElementById("p-weight").value = "";
   document.getElementById("p-height").value = "";
   document.getElementById("person-hint").textContent = "";
+  document.activeElement?.blur(); // iOS : fermer clavier
   renderFoyer(); renderTable(); renderSummary();
   saveAppData(); /* Sauvegarde locale */
 }

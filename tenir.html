@@ -835,6 +835,10 @@
       background:var(--surface); color:var(--red); font-size:11px; cursor:pointer; }
     .save-bar button:hover { background:var(--red-bg); }
 
+    /* iOS Safari — anti-zoom : font-size ≥16px empêche le zoom automatique sur les champs */
+    @media(max-width:540px) {
+      input, select, textarea { font-size:16px !important; }
+    }
     @media(max-width:540px){
       .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
       /* Onglets compactés sur mobile */
@@ -1749,7 +1753,7 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
   },
   "lentilles_rouges_seches": {
-    label: "Lentilles rouges (sèches)",
+    label: "Lentilles rouges / corail (sèches)", labelDE: "Rote Linsen (trocken)",
     aliases: ["lentilles rouges seches","lentilles rouges sec","red split lentils"],
     category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium", generic: [],
@@ -1790,6 +1794,25 @@ const LOCAL_FOOD_DB = {
     waterNeed: "high", energyNeed: "medium",
     generic: ["lentilles","linsen","lentils"],
     nutrition: { kcal:3250, protein:245, carbs:580, fat:10 },
+  },
+  "lentilles_cuites_conserve": {
+    label: "Lentilles cuites / en conserve", labelDE: "Linsen gekocht / Konserve",
+    aliases: [
+      "lentilles cuites","lentilles en conserve","lentille en conserve",
+      "lentilles conserve","lentille conserve",
+      "lentilles boite","lentilles boîte",
+      "boite de lentilles","boîte de lentilles",
+      "lentilles bocal","bocal de lentilles",
+      "lentilles deja cuites","lentilles déjà cuites",
+      "linsen gekocht","gekochte linsen",
+      "linsen konserviert","linsen konserve",
+      "linsen dose","dosenlinsen",
+      "linsen im glas","glas linsen","fertige linsen",
+    ],
+    category: "legumineuse", state: "ready", requiresCooking: false,
+    waterNeed: "none", energyNeed: "none", generic: [],
+    nutrition: { kcal:1050, protein:85, carbs:165, fat:5 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "1 jour",
   },
   "pois_chiches_secs": {
     label: "Pois chiches (secs)",
@@ -6114,11 +6137,33 @@ function getForcedCandidateKeysForQuery(rawName) {
       return ["pois_chiches_secs", "pois_chiches_cuits"];
     }
   }
-  // Haricots rouges / kidneybohnen
+  // Haricots — sélection selon qualificateur
   if (/haricots?\s*rouge/.test(n) || /kidneybohne/.test(n) ||
       /kidney\s*bohne/.test(n) || /kidney\s*bean/.test(n) ||
       /rote\s*bohne/.test(n)) {
-    return ["haricots_rouges_secs", "haricots_rouges_cuits"];
+    const isClearDry = /\b(sec|secs|seche|seches|trocken|dried)\b/.test(n);
+    const isClearCan = /\b(conserve|boite|bocal|dose|konserve|gekocht|cuit|cuits)\b/.test(n);
+    if (isClearDry) return null;
+    if (isClearCan) return ["haricots_rouges_cuits"];
+    return ["haricots_rouges_secs","haricots_rouges_cuits"];
+  }
+  // Haricots génériques (sans rouge) — toutes variantes
+  if (/^haricots?\b/.test(n) && !/rouge/.test(n)) {
+    const isClearCan = /\b(conserve|boite|bocal|dose|vert|blanc|blancs|verts)\b/.test(n);
+    if (isClearCan) return null;
+    return ["haricots_rouges_secs","haricots_rouges_cuits","haricots_blancs","haricots_verts_conserve"];
+  }
+  // Lentilles — sélection enrichie selon qualificateur
+  if (/^lentille/.test(n) || /\blinsen\b/.test(n)) {
+    const isClearDry = /\b(sec|secs|seche|seches|trocken|dried)\b/.test(n);
+    const isClearCan = /\b(cuite|cuites|conserve|boite|bocal|dose|konserve|gekocht)\b/.test(n);
+    const isClearPlat = /\b(eintopf|topf|soupe|ragout|gemuese|gemuse|legumes?)\b/.test(n);
+    if (isClearPlat) return ["linsen_gemuese_topf"];
+    if (isClearCan)  return ["lentilles_cuites_conserve"];
+    if (isClearDry)  return null; // laisser le scoring normal choisir
+    // Terme générique — proposer toutes les variantes importantes
+    return ["lentilles_vertes_seches","lentilles_rouges_seches",
+            "lentilles_cuites_conserve","linsen_gemuese_topf"];
   }
   // Kichererbsen
   if (/kichererbse/.test(n) || /kirchererbse/.test(n)) {
@@ -6129,6 +6174,7 @@ function getForcedCandidateKeysForQuery(rawName) {
 
 async function scanConfirm() {
   if (!_scanParsed) return;
+  document.activeElement?.blur(); // iOS : fermer clavier après validation
 
   // Sécurité : si le bouton affichait "Ouvrir la sélection", ne jamais ajouter directement
   if (_scanParsed._ambiguous) {
@@ -7168,6 +7214,7 @@ function commitManualEntry() {
   } else if (_uResult === "updated") {
     setTimeout(() => setHint("💾 Aliment personnel mis à jour.", "var(--blue)"), 200);
   }
+  document.activeElement?.blur(); // iOS : fermer clavier après validation
   saveAppData();
 }
 
@@ -7416,6 +7463,7 @@ function addWaterItem() {
   if (wdEl)   wdEl.value = "";
   if (wdWrap) wdWrap.style.display = "none";
   hint.textContent = "";
+  document.activeElement?.blur(); // iOS : fermer clavier
   renderWater();
   saveAppData();
 }
@@ -9390,6 +9438,7 @@ function addPerson() {
   document.getElementById("p-weight").value = "";
   document.getElementById("p-height").value = "";
   document.getElementById("person-hint").textContent = "";
+  document.activeElement?.blur(); // iOS : fermer clavier
   renderFoyer(); renderTable(); renderSummary();
   saveAppData(); /* Sauvegarde locale */
 }
