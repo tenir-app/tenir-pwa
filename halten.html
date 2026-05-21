@@ -1130,7 +1130,7 @@
         </div>
       </div>
     </div>
-    <div class="sec-title">Wasser hinzufügen</div>
+    <div class="sec-title" id="water-add-section-title">Wasser hinzufügen</div>
     <div class="add-form">
       <div class="form-row">
         <div class="field f-name"><label>Behälter</label><input type="text" id="w-name" placeholder="Glasflaschen, Kanister…"/></div>
@@ -1183,7 +1183,7 @@
     <div id="foy-warn"></div>
 
     <!-- Reserveziel -->
-    <div class="sec-title" style="margin-top:1.25rem">Reserveziel</div>
+    <div class="sec-title" id="foyer-target-section-title" style="margin-top:1.25rem">Reserveziel</div>
     <div class="add-form">
       <p style="font-size:12px;color:var(--text2);margin:0 0 10px">
         Ziel wählen und schrittweise ausbauen.
@@ -1308,7 +1308,7 @@
       </div>
     </div>
 
-    <div class="sec-title">Gas hinzufügen</div>
+    <div class="sec-title" id="cook-gas-section-title">Gas hinzufügen</div>
     <div class="add-form">
       <div class="form-row">
         <div class="field f-name">
@@ -10755,6 +10755,8 @@ if (!DEBUG_MODE) {
       localStorage.setItem('tenir_onboarding_step','1');
       switchTab('foyer');
       renderFoyer();
+          setTimeout(() => document.getElementById('foyer-target-section-title')
+        ?.scrollIntoView({ block:'start', behavior:'smooth' }), 80);
     ">
       Mit meinem Haushalt beginnen
       <span class="ob-btn-label">Direkt eigene Daten eingeben</span>
@@ -10907,6 +10909,25 @@ function obInjectWeiter(panelId, step) {
   btn.onclick = function() {
     btn.remove();
     switchTab(w.next);
+    // Scroll ciblé selon l'onglet — iOS : délai pour laisser le DOM se stabiliser
+    setTimeout(() => {
+      if (w.next === 'foyer') {
+        setTimeout(() => document.getElementById('foyer-target-section-title')
+          ?.scrollIntoView({ block:'start', behavior:'smooth' }), 80);
+      } else if (w.next === 'water') {
+        const el = document.getElementById('water-add-section-title') ||
+                   document.getElementById('w-name');
+        el ? el.scrollIntoView({ block:'start', behavior:'smooth' })
+           : window.scrollTo({ top:0, left:0, behavior:'smooth' });
+      } else if (w.next === 'cooking') {
+        const el = document.getElementById('cook-gas-section-title') ||
+                   document.getElementById('cook-gas-name');
+        el ? el.scrollIntoView({ block:'start', behavior:'smooth' })
+           : window.scrollTo({ top:0, left:0, behavior:'smooth' });
+      } else {
+        window.scrollTo({ top:0, left:0, behavior:'smooth' });
+      }
+    }, 80);
     obSetStep(step + 1);
   };
   panel.appendChild(btn);

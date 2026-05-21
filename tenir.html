@@ -1114,7 +1114,7 @@
         </div>
       </div>
     </div>
-    <div class="sec-title">Ajouter du stockage</div>
+    <div class="sec-title" id="water-add-section-title">Ajouter du stockage</div>
     <div class="add-form">
       <div class="form-row">
         <div class="field f-name"><label>Contenant</label><input type="text" id="w-name" placeholder="bouteilles verre, jerrican…"/></div>
@@ -1167,7 +1167,7 @@
     <div id="foy-warn"></div>
 
     <!-- Objectif de réserve -->
-    <div class="sec-title" style="margin-top:1.25rem">Objectif de réserve</div>
+    <div class="sec-title" id="foyer-target-section-title" style="margin-top:1.25rem">Objectif de réserve</div>
     <div class="add-form">
       <p style="font-size:12px;color:var(--text2);margin:0 0 10px">
         Choisissez un objectif réaliste. Vous pourrez l'augmenter progressivement.
@@ -1292,7 +1292,7 @@
       </div>
     </div>
 
-    <div class="sec-title">Ajouter du gaz</div>
+    <div class="sec-title" id="cook-gas-section-title">Ajouter du gaz</div>
     <div class="add-form">
       <div class="form-row">
         <div class="field f-name">
@@ -10368,6 +10368,8 @@ if (!DEBUG_MODE) {
       localStorage.setItem('tenir_onboarding_step','1');
       switchTab('foyer');
       renderFoyer();
+      setTimeout(() => document.getElementById('foyer-target-section-title')
+        ?.scrollIntoView({ block:'start', behavior:'smooth' }), 80);
     ">
       Commencer avec mon foyer
       <span class="ob-btn-label">Saisir directement mes propres données</span>
@@ -10505,6 +10507,25 @@ function obInjectWeiter(panelId, step) {
   btn.onclick = function() {
     btn.remove();
     switchTab(w.next);
+    // Scroll ciblé selon l'onglet — iOS : délai pour laisser le DOM se stabiliser
+    setTimeout(() => {
+      if (w.next === 'foyer') {
+        setTimeout(() => document.getElementById('foyer-target-section-title')
+          ?.scrollIntoView({ block:'start', behavior:'smooth' }), 80);
+      } else if (w.next === 'water') {
+        const el = document.getElementById('water-add-section-title') ||
+                   document.getElementById('w-name');
+        el ? el.scrollIntoView({ block:'start', behavior:'smooth' })
+           : window.scrollTo({ top:0, left:0, behavior:'smooth' });
+      } else if (w.next === 'cooking') {
+        const el = document.getElementById('cook-gas-section-title') ||
+                   document.getElementById('cook-gas-name');
+        el ? el.scrollIntoView({ block:'start', behavior:'smooth' })
+           : window.scrollTo({ top:0, left:0, behavior:'smooth' });
+      } else {
+        window.scrollTo({ top:0, left:0, behavior:'smooth' });
+      }
+    }, 80);
     obSetStep(step + 1);
   };
   panel.appendChild(btn);
