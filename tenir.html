@@ -2984,6 +2984,24 @@ const LOCAL_FOOD_DB = {
     nutrition: { kcal:20, protein:1.8, carbs:3.0, fat:0.4 },
     openedLifeCold: "1–2 jours", openedLifeNoCold: "quelques heures",
   },
+  "pomme_fraiche": {
+    label: "Pomme", labelDE: "Apfel",
+    aliases: ["pomme","pommes","pomme moyenne","pommes moyennes",
+              "apfel","aepfel","apfel mittel","mittelgrosse aepfel"],
+    category: "fruits", state: "fresh", requiresCooking: false,
+    waterNeed: "none", energyNeed: "none", generic: [],
+    nutrition: { kcal:520, protein:3, carbs:140, fat:2 },
+    openedLifeCold: "plusieurs jours", openedLifeNoCold: "plusieurs jours",
+  },
+  "orange_fraiche": {
+    label: "Orange", labelDE: "Orange",
+    aliases: ["orange","oranges","orange moyenne","oranges moyennes",
+              "orangen","mittelgrosse orange","mittelgrosse orangen"],
+    category: "fruits", state: "fresh", requiresCooking: false,
+    waterNeed: "none", energyNeed: "none", generic: [],
+    nutrition: { kcal:470, protein:9, carbs:120, fat:1 },
+    openedLifeCold: "plusieurs jours", openedLifeNoCold: "plusieurs jours",
+  },
   "pamplemousse_frais": {
     label: "Pamplemousse frais",
     aliases: ["pamplemousse","pamplemousse frais","grapefruit","fresh grapefruit",
@@ -5910,6 +5928,32 @@ function parseQuickFoodInput(text) {
     }
   }
 
+  // --- Override : pomme/apfel à l'unité → 130 g chacune ---
+  let _pommeOverride = false;
+  let _pommeCount = 0;
+  if (!qty || qty <= 0) {
+    const _pommeMatch = t.match(/\b(\d+)\s*(pommes?|aepfel|apfel(?!\s*(mus|mark|sauce|kompott)))\b/i);
+    if (_pommeMatch) {
+      _pommeCount = parseInt(_pommeMatch[1], 10);
+      qty  = _pommeCount * 130;
+      unit = "g";
+      _pommeOverride = true;
+    }
+  }
+
+  // --- Override : orange/orangen à l'unité → 130 g chacune ---
+  let _orangeOverride = false;
+  let _orangeCount = 0;
+  if (!qty || qty <= 0) {
+    const _orangeMatch = t.match(/\b(\d+)\s*(oranges?|orangen)\b/i);
+    if (_orangeMatch) {
+      _orangeCount = parseInt(_orangeMatch[1], 10);
+      qty  = _orangeCount * 130;
+      unit = "g";
+      _orangeOverride = true;
+    }
+  }
+
   // Pas de quantité claire → ne pas inventer
   if (qty === null || qty <= 0) return null;
 
@@ -6041,8 +6085,10 @@ function parseQuickFoodInput(text) {
     name = "lait uht";
   }
   if (!name) return null;
-  if (_gpOverride)   name = "pamplemousse";
-  if (_oeufOverride) name = "oeuf";
+  if (_gpOverride)     name = "pamplemousse";
+  if (_oeufOverride)   name = "oeuf";
+  if (_pommeOverride)  name = "pomme";
+  if (_orangeOverride) name = "orange";
 
   // --- Multiplicateur suffixe : "PRODUIT POIDS N mal/fois/x" ---
   // Cas non couvert par _malRe (ancré en ^) : le multiplicateur est APRÈS la quantité
@@ -6069,8 +6115,10 @@ function parseQuickFoodInput(text) {
   return {
     name, qty, unit, expiry,
     rawName: _extractRawName(text, name),
-    count:        (_oeufOverride ? _oeufCount : _gpOverride ? _gpCount : null),
-    unitWeightKg: (_oeufOverride ? 53/1000    : _gpOverride ? 300/1000 : null),
+    count:        (_oeufOverride ? _oeufCount : _gpOverride ? _gpCount
+                    : _pommeOverride ? _pommeCount : _orangeOverride ? _orangeCount : null),
+    unitWeightKg: (_oeufOverride ? 53/1000 : _gpOverride ? 300/1000
+                    : _pommeOverride ? 130/1000 : _orangeOverride ? 130/1000 : null),
   };
 }
 
