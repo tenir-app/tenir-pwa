@@ -8526,9 +8526,9 @@ function computeResilienceSummary(state) {
 
   // -- Facteur limitant --
   const limitCandidates = [
-    { key:"calories",  label:"calories",  value: caloriesDays },
-    { key:"protein",   label:"protéines", value: proteinDays  },
-    { key:"water",     label:"eau",       value: waterDays    },
+    { key:"calories",  label:"Kalorien",  value: caloriesDays },
+    { key:"protein",   label:"Proteine",  value: proteinDays  },
+    { key:"water",     label:"Wasser",    value: waterDays    },
   ];
   const limitingFactor = limitCandidates.reduce(
     (min, c) => c.value < min.value ? c : min,
