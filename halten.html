@@ -6960,6 +6960,28 @@ async function addFoodItem() {
     }
 
     if (result.matchType === "partial" && result.candidates && result.candidates.length > 1) {
+      // Exception : si un override unité (œufs, pamplemousses, pommes…) est actif
+      // et que le meilleur candidat est clairement dominant, committer directement
+      const _overrideActive = _pendingItem && _pendingItem.unitWeightKg !== null && _pendingItem.unitWeightKg !== undefined;
+      const _topScore  = result.candidates[0]?.score ?? 0;
+      const _nextScore = result.candidates[1]?.score ?? 0;
+      if (_overrideActive && _topScore >= 90 && _topScore - _nextScore >= 25) {
+        // Reconstruire result depuis le candidat dominant
+        const _topCand = result.candidates[0];
+        const _directResult = {
+          data:         _topCand.data,
+          dataSource:   "LOCAL_FOOD_DB",
+          matchScore:   _topCand.score,
+          matchType:    "exact",
+          matchLabel:   "unit-override",
+          source:       "LOCAL_FOOD_DB",
+          candidates:   [],
+          apiProductName: null,
+          displayName:  _topCand.nameDE || _topCand.name,
+        };
+        commitFoodItem(_pendingItem, _directResult);
+        return;
+      }
       showCandidatePanel(result.candidates, result);
       setHint(`~ Teilweise Übereinstimmung (Score ${result.matchScore}/100) — Produkt bestätigen.`, "var(--amber)");
       return;
