@@ -8,6 +8,7 @@
   <link rel="manifest" href="manifest-fr.webmanifest" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <meta name="theme-color" content="#4A6B2A" />
+  <meta name="color-scheme" content="dark" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -20,8 +21,7 @@
       --blue: #185FA5; --blue-bg: #E6F1FB;
       --r: 10px; --rl: 14px;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
+    body.dark {
         --bg:#1c1c1a; --surface:#252523; --surface2:#2e2e2b;
         --border:rgba(255,255,255,0.09); --border2:rgba(255,255,255,0.18);
         --text:#f0efe8; --text2:#a8a89e; --text3:#66665e;
@@ -29,7 +29,6 @@
         --amber:#EF9F27; --amber-bg:#412402;
         --red:#F09595; --red-bg:#501313;
         --blue:#85B7EB; --blue-bg:#042C53;
-      }
     }
     body { font-family:'Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; max-width:100%; overflow-x:hidden; }
     .shell { max-width:780px; margin:0 auto; padding:2rem 1.25rem 4rem; width:100%; overflow-x:hidden; }
@@ -40,7 +39,16 @@
     .header p  { font-size:13px; color:var(--text2); margin-top:5px; }
     .header .tagline { font-size:12px; color:var(--text3); margin-top:3px; letter-spacing:.01em; }
 
-    .tabs { display:flex; gap:4px; margin-bottom:1.75rem; background:var(--surface2); border-radius:var(--r); padding:4px; min-width:0; max-width:100%; }
+    /* ── Mode sombre/clair toggle ── */
+    .header-wrap { position:relative; }
+    .theme-toggle { position:absolute; top:0; right:0; width:32px; height:32px;
+                    border:none; background:none; cursor:pointer; border-radius:8px;
+                    font-size:18px; display:flex; align-items:center; justify-content:center;
+                    color:var(--text3); touch-action:manipulation;
+                    -webkit-tap-highlight-color:transparent; }
+    .theme-toggle:hover { color:var(--text2); }
+
+{ display:flex; gap:4px; margin-bottom:1.75rem; background:var(--surface2); border-radius:var(--r); padding:4px; min-width:0; max-width:100%; }
     .tab  { flex:1; text-align:center; padding:8px 6px; border-radius:8px; border:none; background:transparent; color:var(--text2); font-size:13px; cursor:pointer; transition:background .15s,color .15s; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
     .tab.active { background:var(--surface); color:var(--text); font-weight:500; box-shadow:0 1px 3px rgba(0,0,0,0.08); }
 
@@ -238,7 +246,7 @@
     #compl-modal { background:#ffffff; border-radius:18px; padding:24px 20px 28px;
                    width:calc(100% - 32px); max-width:400px; box-sizing:border-box;
                    box-shadow:0 4px 32px rgba(0,0,0,.2); max-height:80vh; overflow-y:auto; }
-    @media(prefers-color-scheme:dark){ #compl-modal { background:#252523; } }
+    body.dark #compl-modal { background:#252523; }
 
     /* ── Base alimentaire modale ── */
     #base-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
@@ -249,7 +257,7 @@
                   box-shadow:0 4px 32px rgba(0,0,0,.2); overflow:hidden; }
     @media(min-width:600px){ #base-overlay { align-items:center; justify-content:center; padding:20px; }
       #base-modal { height:90vh; border-radius:18px; } }
-    @media(prefers-color-scheme:dark){ #base-modal { background:var(--surface); } }
+    body.dark #base-modal { background:var(--surface); }
     .base-header { display:flex; align-items:center; justify-content:space-between;
                    padding:16px 16px 12px; border-bottom:0.5px solid var(--border); flex-shrink:0; }
     .base-header-left { display:flex; flex-direction:column; gap:2px; }
@@ -290,7 +298,7 @@
     #base-detail { background:var(--surface); border-radius:18px 18px 0 0; width:100%;
                    max-width:600px; padding:24px 20px 32px; box-sizing:border-box;
                    box-shadow:0 -4px 24px rgba(0,0,0,.2); }
-    @media(prefers-color-scheme:dark){ #base-detail { background:var(--surface); } }
+    body.dark #base-detail { background:var(--surface); }
     .bd-name   { font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px; }
     .bd-source { font-size:12px; color:var(--text3); margin-bottom:18px; }
     .bd-macros { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
@@ -707,11 +715,9 @@
                        max-height:85vh; overflow-y:auto; overflow-x:hidden;
                        box-shadow:0 4px 32px rgba(0,0,0,.22);
                        box-sizing:border-box; z-index:9999; }
-    @media (prefers-color-scheme: dark) {
-      #dontlose-modal { background:#252523; }
-    }
+    body.dark #dontlose-modal { background:#252523; }
     .dontlose-title  { font-size:18px; font-weight:700; margin-bottom:4px; color:#1a1a18; }
-    @media (prefers-color-scheme: dark) { .dontlose-title { color:#f0efe8; } }
+    body.dark .dontlose-title { color:#f0efe8; }
     .dontlose-sub    { font-size:12px; color:var(--text3); margin-bottom:20px; line-height:1.5; }
     .dontlose-section-title { font-size:10px; text-transform:uppercase; letter-spacing:.08em;
                               color:var(--text3); font-weight:700; margin:20px 0 10px;
@@ -726,10 +732,8 @@
                            white-space:nowrap; flex-shrink:0; margin-top:1px; }
     .dontlose-badge-red   { background:#fee2e2; color:#a32d2d; }
     .dontlose-badge-amber { background:#fef3c7; color:#854f0b; }
-    @media (prefers-color-scheme: dark) {
-      .dontlose-badge-red   { background:#501313; color:#f09595; }
-      .dontlose-badge-amber { background:#412402; color:#ef9f27; }
-    }
+    body.dark .dontlose-badge-red   { background:#501313; color:#f09595; }
+    body.dark .dontlose-badge-amber { background:#412402; color:#ef9f27; }
     .dontlose-empty  { font-size:14px; color:var(--text3); padding:16px 0; text-align:center; }
     .dontlose-item-location { font-size:11px; color:var(--text3); margin-top:2px; }
     .dontlose-inline-location { font-weight:400; font-size:11px; color:var(--text3);
@@ -762,7 +766,7 @@
                         width:calc(100% - 32px); max-width:420px;
                         box-sizing:border-box;
                         box-shadow:0 4px 32px rgba(0,0,0,.22); }
-    @media (prefers-color-scheme: dark) { #onboarding-modal { background:#252523; } }
+    body.dark #onboarding-modal { background:#252523; }
     .ob-title  { font-size:20px; font-weight:700; color:var(--text); margin-bottom:6px; }
     .ob-sub    { font-size:13px; color:var(--text2); margin-bottom:24px; line-height:1.5; }
     .ob-btn-primary { display:block; width:100%; padding:13px 16px; margin-bottom:10px;
@@ -863,7 +867,8 @@
 <body>
 <div class="shell">
 
-  <div class="header">
+  <div class="header header-wrap">
+    <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Basculer mode sombre/clair" title="Mode sombre/clair">🌙</button>
     <h1>Tenir<span class="tenir-dot">.</span></h1>
     <p>Combien de temps tenez-vous vraiment&nbsp;?</p>
     <p class="tagline">Eau · Calories · Protéines · Cuisson — votre autonomie réelle, pas votre inventaire.</p>
@@ -10518,6 +10523,29 @@ const WEITER = [
   { next:"cooking", label:"Continuer vers Cuisson \u2192" },
   { next:"summary", label:"Voir mon bilan \u2192" },
 ];
+
+/* ── Thème sombre / clair ── */
+const THEME_KEY = "tenir_theme"; // "dark" | "light"
+
+function _applyTheme(theme) {
+  const isDark = theme !== "light";
+  document.body.classList.toggle("dark", isDark);
+  const btn = document.getElementById("theme-toggle-btn");
+  if (btn) btn.textContent = isDark ? "☀️" : "🌙";
+  // Éviter flash sur iOS : color-scheme meta
+  const meta = document.querySelector('meta[name="color-scheme"]');
+  if (meta) meta.content = isDark ? "dark" : "light";
+}
+
+function toggleTheme() {
+  const current = localStorage.getItem(THEME_KEY) || "dark";
+  const next = current === "dark" ? "light" : "dark";
+  localStorage.setItem(THEME_KEY, next);
+  _applyTheme(next);
+}
+
+// Initialisation immédiate — dark par défaut
+_applyTheme(localStorage.getItem(THEME_KEY) || "dark");
 
 function resetOnboardingDebug() {
   localStorage.removeItem("tenir_onboarding_done");
