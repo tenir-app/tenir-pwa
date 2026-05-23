@@ -122,9 +122,9 @@
     .badge.gray  { background:var(--surface2); color:var(--text3); }
     .del-btn { background:none; border:none; color:var(--text3); cursor:pointer; font-size:16px; padding:0 3px; line-height:1; }
     /* Cuisson : éviter débordement du bouton × sur iPhone */
-    #cooking-list .inv-row { flex-wrap:wrap; overflow:hidden; max-width:100%; box-sizing:border-box; }
-    #cooking-list .inv-row .rname { min-width:0; overflow-wrap:anywhere; }
-    #cooking-list .inv-row .rcal  { min-width:0; text-align:left; }
+    #cooking-list .inv-row { overflow:hidden; max-width:100%; box-sizing:border-box; min-width:0; }
+    #cooking-list .inv-row .rname { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; overflow-wrap:normal; word-break:normal; flex:1; }
+    #cooking-list .inv-row .rcal  { min-width:0; flex-shrink:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     #cooking-list .inv-row .del-btn { flex-shrink:0; margin-left:auto; }
 
     .del-btn:hover { color:var(--red); }
