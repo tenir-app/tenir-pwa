@@ -6766,10 +6766,10 @@ function analyzeQuickInput() {
     const _displayName = (_qResult && _qResult.displayName)
       ? _qResult.displayName
       : _rawNameResolved;
-    // Préremplir f-name avec le nom canonique (pas le texte brut)
-    const _canonicalName = _displayName;
+    // f-name reçoit parsed.name (clé de recherche stable, pas le label d'affichage)
+    // _displayName est réservé au preview et à l'affichage final via commitFoodItem
+    const _canonicalName = parsed.name;
     // Simuler la recherche que addFoodItem fera avec _canonicalName
-    // (addFoodItem utilise f-name.value = _canonicalName, pas parsed.name)
     const _qResultFinal = getFoodDataSync(_canonicalName);
     // Détecter un match ambigu — si _qResult est déjà exact, pas d'ambiguïté possible
     const _willOpenCandidates = (r) => !!(r && (
