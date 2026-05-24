@@ -109,6 +109,11 @@
         color:black !important; opacity:1 !important; }
       .inv-table th { background:#eee !important; }
       .inv-table th:last-child, .inv-table td:last-child { display:none !important; }
+      #print-water-section { display:block !important; margin-top:18px; }
+      #print-water-section h3 { font-size:13px; font-weight:700; margin:0 0 6px 0; color:black; border-top:2px solid #888; padding-top:8px; }
+      #print-water-section table { width:100%; border-collapse:collapse; font-size:9px; }
+      #print-water-section th, #print-water-section td { border:1px solid #aaa; padding:3px 5px; color:black !important; text-align:left; }
+      #print-water-section th { background:#eee !important; font-size:8px; text-transform:uppercase; letter-spacing:.05em; }
     }
     .inv-table { width:100%; border-collapse:collapse; font-size:13px; }
     .inv-table thead th { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text3); font-weight:500; padding:7px 10px; border-bottom:0.5px solid var(--border2); text-align:left; white-space:nowrap; }
@@ -1105,6 +1110,10 @@
       </table>
     </div>
   </div>
+
+
+  <!-- Section eau pour impression uniquement -->
+  <div id="print-water-section" style="display:none"></div>
 
   <!-- == EAU == -->
   <div class="panel" id="panel-water">
@@ -2755,13 +2764,14 @@ const LOCAL_FOOD_DB = {
   },
   /* ---- KEIMSPROSSEN ---- */
   "graines_alfalfa": {
-    label: "Graines d'alfalfa (pousses)",
-    labelDE: "Alfalfasamen (Sprossen)",
+    label: "Graines d'alfalfa à germer", labelDE: "Alfalfa-Keimsamen",
     aliases: ["alfalfa","luzerne","alfalfa sprossen","alfalfasamen",
-              "graines alfalfa","graines de luzerne"],
+              "graines alfalfa","graines de luzerne",
+              "pousses alfalfa","germes alfalfa","alfalfa sprouts",
+              "keimsprossen","sprossen alfalfa","alfalfa keimlinge"],
     category: "germination", state: "dry", requiresCooking: false,
     waterNeed: "medium", energyNeed: "none", generic: [],
-    nutrition: { kcal:2300, protein:350, carbs:300, fat:100 },
+    nutrition: { kcal:1200, protein:50, carbs:50, fat:5 },
     sprouting: true,
     sproutingDays: "3–7 jours",
     sproutingWaterNeed: "rinçage 2×/jour avec eau propre",
@@ -7228,6 +7238,26 @@ function normalizeMergeKey(s) {
     .trim();
 }
 
+
+/* ── Wasser für Druck ── */
+function _buildPrintWaterSection() {
+  const el = document.getElementById('print-water-section');
+  if (!el) return;
+  if (!waters || waters.length === 0) { el.innerHTML = ''; return; }
+  const rows = waters.map(w => {
+    const opened = (w.units || []).filter(u => u.openedAt).length;
+    const total  = (w.units || []).length;
+    const state  = opened > 0 ? `${opened}/${total} geöffnet` : 'geschlossen';
+    const liters = (w.liters || 0).toFixed(2);
+    const date   = w.waterDate || w.renewBefore || '';
+    return `<tr><td>${w.name || ''}</td><td>${w.qty || ''}</td><td>${liters} L</td><td>${state}</td><td>${date}</td></tr>`;
+  }).join('');
+  el.innerHTML = `<h3>Wasserreserve</h3>
+<table>
+<thead><tr><th>Behälter</th><th>Anzahl</th><th>Volumen</th><th>Zustand</th><th>Datum</th></tr></thead>
+<tbody>${rows}</tbody>
+</table>`;
+}
 function printInventoryByUseFrom() {
   switchTab('inv');
   const sort = document.getElementById('sort-by');
@@ -7235,6 +7265,7 @@ function printInventoryByUseFrom() {
   renderTable();
   const pd = document.getElementById('print-date');
   if (pd) pd.textContent = new Date().toLocaleDateString('de-DE', {day:'2-digit',month:'long',year:'numeric'});
+  _buildPrintWaterSection();
   setTimeout(() => window.print(), 150);
 }
 
@@ -7343,6 +7374,19 @@ function printInventoryByUnit() {
     </tr>`;
   }).join("");
 
+
+  // Wasser-Sektion für printInventoryByUnit
+  let _waterHtml = '';
+  if (waters && waters.length > 0) {
+    const _wRows = waters.map(w => {
+      const opened = (w.units||[]).filter(u=>u.openedAt).length;
+      const total  = (w.units||[]).length;
+      const state  = opened > 0 ? `${opened}/${total} geöffnet` : 'geschlossen';
+      const date   = w.waterDate || w.renewBefore || '';
+      return `<tr><td>${w.name||''}</td><td>${w.qty||''}</td><td>${(w.liters||0).toFixed(2)} L</td><td>${state}</td><td>${date}</td></tr>`;
+    }).join('');
+    _waterHtml = `<h2 style="margin-top:18px;font-size:13px">💧 Wasserreserve</h2><table><thead><tr><th>Behälter</th><th>Anzahl</th><th>Volumen</th><th>Zustand</th><th>Datum</th></tr></thead><tbody>${_wRows}</tbody></table>`;
+  }
   const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
   <title>Detailliertes Inventar nach Einheit — ${dateStr}</title>
   <style>
@@ -7366,6 +7410,7 @@ function printInventoryByUnit() {
     </tr></thead>
     <tbody>${tableRows}</tbody>
   </table>
+  ${_waterHtml}
   </body></html>`;
 
   const win = window.open("", "_blank");
@@ -8283,7 +8328,8 @@ const VITAMIN_SOURCE_KEYWORDS = {
           "aprikose","poivron","paprika","patate douce","süsskartoffel"],
   // Vitamine K / folates / fibres (légumes verts, légumineuses)
   vitK:  ["epinard","spinat","brokkoli","brocoli","erbsen","pois","grünkohl",
-          "linsen","lentilles","haricots","bohnen","kichererbsen","petersilie","persil"],
+          "linsen","lentilles","haricots","bohnen","kichererbsen","petersilie","persil",
+          "alfalfa","sprout","sprouts","germes","pousses","sprossen","keimsprossen","keimlinge"],
   // Probiotiques / fermentés (soutien immunitaire)
   ferm:  ["sauerkraut","choucroute","kefir","yaourt","yogurt","kimchi","miso"],
   // Fruits secs / noix (vitamine E)
