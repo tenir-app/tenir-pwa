@@ -9447,11 +9447,11 @@ function openDoNotLoseModal() {
       const unopenedL = units.length > 0
         ? units.filter(u => !u.openedAt).reduce((s, u) => s + (u.liters || 0), 0)
         : (w.liters || 0);
-      html += `<div class="dontlose-item">
-        <div class="dontlose-item-name">${w.name || "Eau"}
+      html += `<div class="dontlose-item" style="display:flex;flex-direction:row;align-items:flex-start;flex-wrap:nowrap">
+        <div class="dontlose-item-name" style="flex:1;min-width:0">${w.name || "Eau"}
           <div style="font-size:11px;color:var(--text3)">${totalCount} contenant${totalCount>1?"s":""} · ${unopenedL.toFixed(1)} L non ouverts</div>
         </div>
-        <button class="dontlose-delete-btn" style="color:var(--accent)" onclick="openWaterFromModal(${w.id})">Ouvrir</button>
+        <button class="dontlose-delete-btn" style="color:var(--accent);flex-shrink:0;margin-left:8px" onclick="openWaterFromModal(${w.id})">Ouvrir</button>
       </div>`;
     });
   }
