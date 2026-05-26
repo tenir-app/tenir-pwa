@@ -358,6 +358,9 @@
     @media print { .open-btn, .open-cancel-btn { display:none !important; } }
     .unit-detail-row td { font-size:11px; color:var(--text3); background:var(--surface2); }
     .unit-detail-row td:first-child { font-style:italic; }
+    .unit-qty-editable { cursor:pointer; border-bottom:1px dashed var(--text3); text-decoration:none; }
+    .unit-qty-editable:hover { border-bottom-color:var(--accent); color:var(--text1); }
+    .unit-qty-input { width:60px; font-size:11px; padding:1px 4px; border:1px solid var(--accent); border-radius:4px; background:var(--surface); color:var(--text1); }
     /* Cellules éditables dans le tableau inventaire */
     td.editable { cursor:pointer; }
     td.editable:hover { background:var(--surface2); border-radius:4px; }
@@ -562,6 +565,12 @@
     .verdict-label { font-size:11px; text-transform:uppercase; letter-spacing:.08em; opacity:.65; }
     .verdict-title { font-size:15px; font-weight:600; margin:0 0 4px; opacity:.9; }
     .verdict-phrase{ font-size:12px; opacity:.7; line-height:1.5; max-width:38em; }
+    .verdict-block { position:relative; }
+    .verdict-manage-btn { position:absolute; top:14px; right:14px;
+      font-size:11px; padding:5px 9px; border-radius:999px;
+      border:0.5px solid var(--border2); background:rgba(255,255,255,0.08);
+      color:var(--text2); cursor:pointer; white-space:nowrap; }
+    body.dark .verdict-manage-btn { background:rgba(255,255,255,.06); }
     .verdict-thresholds { font-size:11px; opacity:.55; margin-top:12px; padding-top:8px;
       border-top:0.5px solid currentColor; letter-spacing:.01em; }
     /* Badge actionnable pleine largeur */
@@ -1171,7 +1180,6 @@
           <input type="month" id="w-water-date" style="font-size:13px"
                  oninput="document.getElementById('w-water-date-wrap').style.display=document.getElementById('w-date-type').value?'block':'none'"/></div>
         <button class="btn" onclick="addWaterItem()">+ Ajouter</button>
-        <button class="btn btn-mic" id="mic-btn-water" onclick="toggleVoiceWater()" title="Saisie vocale eau">🎤</button>
       </div>
       <div class="form-hint" id="water-hint"></div>
     </div>
@@ -1428,6 +1436,7 @@
         <div class="ls-limit-note" id="limit-note"></div>
       </div>
       <div class="verdict-thresholds" id="verdict-thresholds">Seuils : critique &lt; 3 j · limitée 3–14 j · stable ≥ 14 j</div>
+      <button onclick="openDoNotLoseModal()" class="verdict-manage-btn">⟳ Gérer le stock</button>
     </div>
 
     <!-- BLOC 1 — COMPARATIF DES RESSOURCES -->
@@ -1634,6 +1643,8 @@ const LOCAL_FOOD_DB = {
     category: "cereale", state: "dry", requiresCooking: true,
     waterNeed: "high", energyNeed: "medium", generic: [],
     nutrition: { kcal:3600, protein:75, carbs:780, fat:10 },
+    openedLifeCold: "1–3 semaines", openedLifeNoCold: "1–3 semaines",
+    openedLifeCold: "1–3 semaines", openedLifeNoCold: "1–3 semaines",
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
   },
   "riz_long": {
@@ -1905,8 +1916,7 @@ const LOCAL_FOOD_DB = {
   },
   "haricots_generique": {
     label: "Haricots rouges",
-    aliases: ["haricots rouges","rote bohnen","kidney beans","red kidney beans","haricots",
-              "kidney bohnen","kidneybohnen"],
+    aliases: ["haricots rouges","kidney beans","red kidney beans","haricots"],
     category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "high", energyNeed: "medium",
     generic: ["haricots rouges","haricots","bohnen","beans"],
@@ -1915,11 +1925,12 @@ const LOCAL_FOOD_DB = {
 
   /* ---- PROTEINES ---- */
   "whey": {
-    label: "Protéine whey",
+    label: "Protéine whey", labelDE: "Whey-Protein",
     aliases: ["whey","whey protein","whey-protein","proteine whey","molkenprotein","protein powder","eiweissulver"],
     category: "supplement", state: "instant", requiresCooking: false,
     waterNeed: "low", energyNeed: "none", generic: [],
     nutrition: { kcal:3800, protein:750, carbs:60, fat:50 },
+    openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
   },
   "beurre_arachide": {
     label: "Beurre d'arachide 100 %",
@@ -1932,7 +1943,7 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "1–2 mois", openedLifeNoCold: "2–4 semaines",
   },
   "pate_arachide_sucree": {
-    label: "Pâte à tartiner aux arachides sucrée",
+    label: "Pâte à tartiner aux arachides sucrée", labelDE: "Erdnussbutter (gesüßt)",
     aliases: ["pate a tartiner arachide","pate a tartiner aux arachides",
               "creme arachide","creme de cacahuete",
               "erdnusscreme","erdnuss creme",
@@ -1940,20 +1951,29 @@ const LOCAL_FOOD_DB = {
     category: "base", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:5900, protein:220, carbs:280, fat:450 },
+    openedLifeCold: "2–3 mois", openedLifeNoCold: "1–2 mois",
   },
 
   /* ---- LIPIDES ---- */
+  "ghee": {
+    label: "Beurre clarifié", labelDE: "Ghee",
+    aliases: ["ghee","beurre clarifie","beurre clarifié","butterschmalz"],
+    category: "graisse", state: "ready", requiresCooking: false,
+    waterNeed: "none", energyNeed: "none", generic: [],
+    nutrition: { kcal:9000, protein:0, carbs:0, fat:1000 },
+    openedLifeCold: "plusieurs mois", openedLifeNoCold: "plusieurs semaines",
+  },
   "huile_olive": {
-    label: "Huile d'olive",
+    label: "Huile d'olive", labelDE: "Olivenöl",
     aliases: ["huile olive","olivenol","olivenol extra vergine","olive oil","extra virgin olive oil",
               "huile d olive"],
     category: "huile", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:8840, protein:0, carbs:0, fat:1000 },
-    openedLife: "3–6 mois",
+    openedLifeCold: "3–6 mois", openedLifeNoCold: "3–6 mois",
   },
   "huile_tournesol": {
-    label: "Huile de tournesol",
+    label: "Huile de tournesol", labelDE: "Sonnenblumenöl",
     aliases: ["huile tournesol","huile de tournesol","sonnenblumenol","sunflower oil"],
     category: "huile", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1961,25 +1981,26 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "3–6 mois", openedLifeNoCold: "3–6 mois",
   },
   "huile_colza": {
-    label: "Huile de colza",
+    label: "Huile de colza", labelDE: "Rapsöl",
     aliases: ["huile colza","huile de colza","rapsol","canola oil","rapeseed oil"],
     category: "huile", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:8840, protein:0, carbs:0, fat:1000 },
+    openedLifeCold: "3–6 mois", openedLifeNoCold: "3–6 mois",
   },
   "huile_generique": {
-    label: "Huile",
-    aliases: ["huile","ol","oil","speiseol"],
+    label: "Huile", labelDE: "Speiseöl",
+    aliases: ["huile","oil","speiseol"],
     category: "huile", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none",
-    generic: ["huile","ol","oil","speiseol"],
+    generic: ["huile","oil","speiseol"],
     nutrition: { kcal:8840, protein:0, carbs:0, fat:1000 },
     openedLifeCold: "3–6 mois", openedLifeNoCold: "3–6 mois",
   },
 
   /* ---- BASE ---- */
   "sel": {
-    label: "Sel iodé",
+    label: "Sel iodé", labelDE: "Salz",
     aliases: ["sel iode","jodsalz","sel","salz","iodized salt","table salt"],
     category: "condiment", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -1998,7 +2019,7 @@ const LOCAL_FOOD_DB = {
     openedLifeNoCold: "très longue durée si refermé au sec",
   },
   "sucre": {
-    label: "Sucre blanc",
+    label: "Sucre blanc", labelDE: "Zucker",
     aliases: ["sucre blanc","sucre","zucker","sugar","white sugar","granulated sugar","sucre raffine"],
     category: "base", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2006,7 +2027,7 @@ const LOCAL_FOOD_DB = {
     openedLife: "illimité",
   },
   "miel": {
-    label: "Miel",
+    label: "Miel", labelDE: "Honig",
     aliases: ["miel","honig","honey","raw honey"],
     category: "base", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2023,10 +2044,11 @@ const LOCAL_FOOD_DB = {
   },
   "levure": {
     label: "Levure sèche",
-    aliases: ["levure seche","levure","trockenhefe","hefe","dry yeast","instant yeast","yeast"],
+    aliases: ["levure","hefe","instant yeast","yeast"],
     category: "base", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:310, protein:400, carbs:180, fat:10 },
+    openedLifeCold: "3–6 mois", openedLifeNoCold: "3–6 mois",
   },
 
   /* ---- CONSERVES / SAUCES ---- */
@@ -2057,6 +2079,7 @@ const LOCAL_FOOD_DB = {
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:250, protein:15, carbs:50, fat:3 },
+    openedLifeCold: "3–5 jours", openedLifeNoCold: "consommer dans la journée",
   },
   "cornichons": {
     label: "Cornichons",
@@ -2098,8 +2121,9 @@ const LOCAL_FOOD_DB = {
   },
   "galette_riz": {
     label: "Galette de riz / maïs (soufflé)",
-    aliases: ["galette de riz","galette riz","riz souffle","galette mais","galette de mais",
-              "reiswaffeln","maiswaffeln","rice cake","corn cake","rice cracker"],
+    aliases: ["galette de riz","galettes de riz","galette riz","riz souffle","galette mais","galette de mais",
+              "reiswaffel","reiswaffeln","reis waffel","reis waffeln","maiswaffeln",
+              "rice cake","rice cakes","corn cake","rice cracker"],
     category: "cereale", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:3870, protein:80, carbs:820, fat:30 },
@@ -2129,12 +2153,13 @@ const LOCAL_FOOD_DB = {
     openedLifeNoCold: "plusieurs semaines si refermé au sec",
   },
   "abricots_generique": {
-    label: "Abricots",
+    label: "Abricots", labelDE: "Aprikosen",
     aliases: ["abricots","abricot","aprikosen","aprikose","apricots","apricot"],
-    category: "fruit", state: "dry", requiresCooking: false,
+    category: "fruit", state: "fresh", requiresCooking: false,
     waterNeed: "none", energyNeed: "none",
     generic: ["abricots","abricot","aprikosen","aprikose","apricots","apricot"],
-    nutrition: { kcal:0, protein:0, carbs:0, fat:0 },
+    nutrition: { kcal:480, protein:10, carbs:110, fat:4 },
+    openedLifeCold: "2–4 jours", openedLifeNoCold: "consommer dans la journée",
   },
   "bananen_chips": {
     label: "Bananen chips (bananes séchées)",
@@ -2214,6 +2239,7 @@ const LOCAL_FOOD_DB = {
     category: "fruit", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:520, protein:4, carbs:125, fat:2 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "consommer dans la journée",
   },
   "ananas_conserve": {
     label: "Ananas en conserve",
@@ -2249,6 +2275,7 @@ const LOCAL_FOOD_DB = {
     category: "fruit", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:180, protein:5, carbs:40, fat:1 },
+    openedLifeCold: "2–4 jours", openedLifeNoCold: "consommer dans la journée",
   },
   "framboises_conserve_sucrees": {
     label: "Framboises en conserve légèrement sucrées",
@@ -2310,19 +2337,21 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "jusqu'à expiration si fermé au sec", openedLifeNoCold: "jusqu'à expiration si fermé au sec",
   },
   "pate_chocolat": {
-    label: "Pâte à tartiner chocolat-noisette",
+    label: "Pâte à tartiner chocolat-noisette", labelDE: "Nuss-Nougat-Creme",
     aliases: ["pate a tartiner","pate tartiner","pate tartiner chocolat","nuss nougat creme","nussnougatcreme",
               "nuss nougat","pate noisette","chocolate hazelnut spread","hazelnut spread","nutella","haselnusskrem"],
     category: "base", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:5390, protein:60, carbs:575, fat:310 },
+    openedLifeCold: "1–3 mois", openedLifeNoCold: "2–4 semaines",
   },
   "crackers": {
     label: "Crackers",
-    aliases: ["crackers","crackers sales","salzcracker","knacker","salted crackers","crackers biscuits"],
+    aliases: ["crackers","cracker","salzcracker","knacker","salted crackers","crackers biscuits","crackers sales"],
     category: "cereale", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:4300, protein:100, carbs:630, fat:160 },
+    openedLifeCold: "1–3 semaines", openedLifeNoCold: "1–3 semaines",
   },
   "pain_croustillant": {
     label: "Pain croustillant (knäckebrot)",
@@ -2331,6 +2360,7 @@ const LOCAL_FOOD_DB = {
     category: "cereale", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:3350, protein:100, carbs:650, fat:25 },
+    openedLifeCold: "1–3 semaines", openedLifeNoCold: "1–3 semaines",
   },
   "biscottes": {
     label: "Biscottes",
@@ -2338,6 +2368,7 @@ const LOCAL_FOOD_DB = {
     category: "cereale", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:4050, protein:110, carbs:730, fat:65 },
+    openedLifeCold: "1–3 semaines", openedLifeNoCold: "1–3 semaines",
   },
   "pumpernickel": {
     label: "Pumpernickel (pain de seigle complet)",
@@ -2369,14 +2400,15 @@ const LOCAL_FOOD_DB = {
     openedLifeNoCold: "plusieurs semaines si refermé au sec",
   },
   "chocolat_noir": {
-    label: "Chocolat noir",
+    label: "Chocolat noir", labelDE: "Zartbitterschokolade",
     aliases: ["chocolat noir","dunkle schokolade","dark chocolate","zartbitterschokolade","chocolat"],
     category: "base", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:5460, protein:50, carbs:480, fat:350 },
+    openedLifeCold: "3–6 mois", openedLifeNoCold: "3–6 mois",
   },
   "chocolat_lait": {
-    label: "Chocolat au lait",
+    label: "Chocolat au lait", labelDE: "Vollmilchschokolade",
     aliases: ["chocolat au lait","chocolat lait","milchschokolade","vollmilchschokolade",
               "milk chocolate","tablette chocolat au lait"],
     category: "base", state: "ready", requiresCooking: false,
@@ -2449,35 +2481,91 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "1–3 mois", openedLifeNoCold: "quelques jours à 2 semaines selon sucre et contamination",
   },
   "lait_concentre_sucre": {
-    label: "Lait concentré sucré",
+    label: "Lait concentré sucré", labelDE: "Gezuckerte Kondensmilch",
     aliases: ["lait concentre sucre","gezuckerte kondensmilch","sweetened condensed milk","condensed milk"],
     category: "base", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:3210, protein:80, carbs:540, fat:85 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "consommer dans la journée",
   },
 
   /* ---- B. PROTÉINES PRÊTES À CONSOMMER ---- */
   "thon_conserve": {
-    label: "Thon en conserve",
+    label: "Thon en conserve", labelDE: "Thunfisch in der Dose",
     aliases: ["thon","thon conserve","thon boite","thon en conserve","thon nature","thon huile",
               "thunfisch","thunfisch dose","canned tuna","tuna","tuna can"],
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
-    nutrition: { kcal:960, protein:250, carbs:0, fat:10 },
+    nutrition: { kcal:960, protein:220, carbs:0, fat:10 },
+    openedLifeCold: "1–2 jours", openedLifeNoCold: "consommer immédiatement",
   },
   "sardines_conserve": {
-    label: "Sardines en conserve",
+    label: "Sardines en conserve", labelDE: "Sardinen in der Dose",
     aliases: ["sardines","sardines conserve","sardines boite","sardinen dose","canned sardines"],
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:2000, protein:240, carbs:0, fat:110 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "consommer dans la journée",
   },
   "maquereau_conserve": {
-    label: "Maquereau en conserve",
+    label: "Maquereau en conserve", labelDE: "Makrele in der Dose",
     aliases: ["maquereau","maquereau conserve","maquereau boite","makrele dose","canned mackerel","mackerel"],
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:1850, protein:190, carbs:0, fat:120 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "consommer dans la journée",
+  },
+  "corned_beef": {
+    label: "Corned-beef", labelDE: "Corned Beef",
+    aliases: ["corned beef","corned-beef","cornedboeuf","bully beef"],
+    category: "conserve", state: "ready", requiresCooking: false,
+    waterNeed: "none", energyNeed: "none", generic: [],
+    nutrition: { kcal:2500, protein:180, carbs:10, fat:200 },
+    openedLifeCold: "1–2 jours", openedLifeNoCold: "consommer immédiatement",
+  },
+  "poulet_conserve": {
+    label: "Poulet en conserve", labelDE: "Hähnchen in der Dose",
+    aliases: ["poulet conserve","poulet en conserve","poulet boite",
+              "hähnchen dose","hähnchen in der dose","hahnchen dose","huhn dose"],
+    category: "conserve", state: "ready", requiresCooking: false,
+    waterNeed: "none", energyNeed: "none", generic: [],
+    nutrition: { kcal:1500, protein:240, carbs:0, fat:50 },
+    openedLifeCold: "1–2 jours", openedLifeNoCold: "consommer immédiatement",
+  },
+  "saumon_conserve": {
+    label: "Saumon en conserve", labelDE: "Lachs in der Dose",
+    aliases: ["saumon conserve","saumon en conserve","saumon boite",
+              "lachs dose","lachs in der dose"],
+    category: "conserve", state: "ready", requiresCooking: false,
+    waterNeed: "none", energyNeed: "none", generic: [],
+    nutrition: { kcal:1900, protein:250, carbs:0, fat:100 },
+    openedLifeCold: "1–2 jours", openedLifeNoCold: "consommer immédiatement",
+  },
+  "spam": {
+    label: "Spam", labelDE: "Spam",
+    aliases: ["spam","spam viande","spam porc","spam can"],
+    category: "conserve", state: "ready", requiresCooking: false,
+    waterNeed: "none", energyNeed: "none", generic: [],
+    nutrition: { kcal:3150, protein:130, carbs:20, fat:280 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "consommer dans la journée",
+  },
+  "chili_viande": {
+    label: "Chili con carne en conserve", labelDE: "Chili con Carne (Konserve)",
+    aliases: ["chili con carne","chili viande","chili avec viande",
+              "chili mit fleisch","chili con carne conserve"],
+    category: "conserve", state: "ready", requiresCooking: false,
+    waterNeed: "none", energyNeed: "none", generic: [],
+    nutrition: { kcal:1150, protein:60, carbs:90, fat:60 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "consommer immédiatement",
+  },
+  "chili_vegetarien": {
+    label: "Chili végétarien en conserve", labelDE: "Vegetarisches Chili (Konserve)",
+    aliases: ["chili vegetarien","chili végétarien","chili sans viande","chili veggie",
+              "vegetarisches chili","veggie chili","chili vegetarisch","chili ohne fleisch"],
+    category: "conserve", state: "ready", requiresCooking: false,
+    waterNeed: "none", energyNeed: "none", generic: [],
+    nutrition: { kcal:900, protein:40, carbs:120, fat:20 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "consommer immédiatement",
   },
   "tofu": {
     label: "Tofu",
@@ -2486,9 +2574,10 @@ const LOCAL_FOOD_DB = {
     category: "legumineuse", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:760, protein:80, carbs:20, fat:45 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "quelques heures",
   },
   "lait_uht": {
-    label: "Lait UHT",
+    label: "Lait UHT", labelDE: "H-Milch",
     aliases: ["lait uht","lait entier uht","lait demi ecreme","lait demi-ecreme","lait demiecreme",
               "lait ecreme","lait de vache","lait longue conservation","lait frais",
               "h-milch","vollmilch","fettarme milch","haltbare milch",
@@ -2496,6 +2585,7 @@ const LOCAL_FOOD_DB = {
     category: "base", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:620, protein:32, carbs:47, fat:35 },
+    openedLifeCold: "3–5 jours", openedLifeNoCold: "consommer dans la journée",
   },
   "lait_generique": {
     label: "Lait",
@@ -2504,13 +2594,15 @@ const LOCAL_FOOD_DB = {
     waterNeed: "none", energyNeed: "none",
     generic: ["lait","milch","milk"],
     nutrition: { kcal:620, protein:32, carbs:47, fat:35 },
+    openedLifeCold: "3–5 jours", openedLifeNoCold: "consommer dans la journée",
   },
   "lait_poudre": {
-    label: "Lait en poudre",
+    label: "Lait en poudre", labelDE: "Milchpulver",
     aliases: ["lait en poudre","lait poudre","milchpulver","powdered milk","dried milk","milk powder"],
     category: "base", state: "dry", requiresCooking: false,
     waterNeed: "low", energyNeed: "none", generic: [],
     nutrition: { kcal:4960, protein:260, carbs:380, fat:270 },
+    openedLifeCold: "plusieurs semaines si refermé au sec", openedLifeNoCold: "plusieurs semaines si refermé au sec",
   },
 
   /* ---- C. LIPIDES / OMÉGA / DENSITÉ ---- */
@@ -2526,7 +2618,7 @@ const LOCAL_FOOD_DB = {
   "amandes": {
     label: "Amandes",
     aliases: ["amandes","amande","mandeln","almonds","almond"],
-    category: "supplement", state: "ready", requiresCooking: false,
+    category: "supplement", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:5750, protein:210, carbs:200, fat:490 },
   },
@@ -2570,19 +2662,19 @@ const LOCAL_FOOD_DB = {
   "graines_lin": {
     label: "Graines de lin",
     aliases: ["graines de lin","graines lin","leinsamen","flaxseed","flax seeds","linseed"],
-    category: "supplement", state: "ready", requiresCooking: false,
+    category: "supplement", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:5340, protein:180, carbs:290, fat:420 },
   },
   "graines_chia": {
     label: "Graines de chia",
     aliases: ["graines chia","graines de chia","chiasamen","chia seeds","chia"],
-    category: "supplement", state: "ready", requiresCooking: false,
+    category: "supplement", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:4860, protein:170, carbs:420, fat:310 },
   },
   "huile_algues": {
-    label: "Huile d'algues",
+    label: "Huile d'algues", labelDE: "Algenöl",
     aliases: ["huile algues","huile d algues","algenol","algenöl","algae oil","omega 3 algues","dha algues"],
     category: "huile", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2614,16 +2706,17 @@ const LOCAL_FOOD_DB = {
     nutrition: { kcal:3390, protein:65, carbs:760, fat:20 },
   },
   "bouillon_cube": {
-    label: "Bouillon cube",
+    label: "Bouillon cube", labelDE: "Brühwürfel",
     aliases: ["bouillon cube","bouillon","cube bouillon","bruhwurfel","brühwürfel","brühe",
               "stock cube","vegetable stock","chicken stock","bouillon de legumes",
               "bouillon de volaille","gemüsebrühe","hühnerbrühe"],
     category: "condiment", state: "dry", requiresCooking: true,
     waterNeed: "high", energyNeed: "none", generic: [],
-    nutrition: { kcal:2300, protein:100, carbs:300, fat:120 },
+    nutrition: { kcal:2300, protein:100, carbs:300, fat:80 },
+    openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
   },
   "cafe": {
-    label: "Café",
+    label: "Café", labelDE: "Kaffee",
     aliases: ["cafe","kaffee","coffee","cafe moulu","cafe instantane","ground coffee",
               "espresso","instant coffee","loslicher kaffee","loskaffee","nescafe"],
     category: "condiment", state: "dry", requiresCooking: false,
@@ -2632,7 +2725,7 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
   },
   "the": {
-    label: "Thé",
+    label: "Thé", labelDE: "Tee",
     aliases: ["the","tee","tea","the vert","green tea","the noir","black tea","thee",
               "grun tee","gruner tee","schwarzer tee","herbal tea","tisane","infusion",
               "pfefferminztee","kamillentee","kräutertee"],
@@ -2643,7 +2736,7 @@ const LOCAL_FOOD_DB = {
   },
   "backpulver": {
     label: "Levure chimique (Backpulver)",
-    aliases: ["backpulver","levure chimique","poudre a lever","baking powder","levure","lievito"],
+    aliases: ["backpulver","levure chimique","poudre a lever","baking powder","lievito"],
     category: "condiment", state: "dry", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:0, protein:0, carbs:0, fat:0 },
@@ -2658,11 +2751,12 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "3–4 mois si refermé au sec", openedLifeNoCold: "3–4 mois si refermé au sec",
   },
   "lait_coco": {
-    label: "Lait de coco",
+    label: "Lait de coco", labelDE: "Kokosmilch",
     aliases: ["lait de coco","lait coco","kokosmilch","coconut milk","coconut cream"],
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:1970, protein:20, carbs:60, fat:200 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "consommer dans la journée",
   },
   /* ---- GRAINES À GERMER / POUSSES ---- */
   "graines_alfalfa": {
@@ -2670,7 +2764,7 @@ const LOCAL_FOOD_DB = {
     aliases: ["alfalfa","luzerne","alfalfa sprossen","alfalfasamen",
               "graines alfalfa","graines de luzerne",
               "pousses alfalfa","germes alfalfa","alfalfa sprouts",
-              "keimsprossen","sprossen alfalfa","alfalfa keimlinge"],
+              "sprossen alfalfa","alfalfa keimlinge"],
     category: "germination", state: "dry", requiresCooking: false,
     waterNeed: "medium", energyNeed: "none", generic: [],
     nutrition: { kcal:1200, protein:50, carbs:50, fat:5 },
@@ -2719,9 +2813,10 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
   },
   "graines_bockshornklee": {
-    label: "Graines de bockshornklee (fenugrec)",
-    aliases: ["bockshornklee","fenugrec","fenugreek","graines de fenugrec",
-              "bockshornkleesamen"],
+    label: "Graines de fenugrec à germer", labelDE: "Bockshornklee-Keimsamen",
+    aliases: ["bockshornklee","fenugrec","fenugreek","graines de fenugrec","graines fenugrec",
+              "fenugrec a germer","bockshornklee samen","bockshornklee keimsamen",
+              "bockshornkleesamen","keimsamen bockshorn","fenugreek seeds"],
     category: "germination", state: "dry", requiresCooking: false,
     waterNeed: "medium", energyNeed: "none", generic: [],
     nutrition: { kcal:3230, protein:230, carbs:580, fat:60 },
@@ -2742,7 +2837,7 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "1–2 semaines", openedLifeNoCold: "quelques jours",
   },
   "huile_coco": {
-    label: "Huile de coco",
+    label: "Huile de coco", labelDE: "Kokosöl",
     aliases: ["huile de coco","huile coco","kokosol","kokosöl","coconut oil","kokosfett"],
     category: "huile", state: "liquid", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
@@ -2760,7 +2855,7 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "2–3 jours", openedLifeNoCold: "1 jour",
   },
   "edamame_conserve": {
-    label: "Edamame en conserve",
+    label: "Edamame en conserve", labelDE: "Edamame in der Dose",
     aliases: ["edamame","edamame conserve","edamame en conserve","feves edamame",
               "edamame dose","edamame bohnen","canned edamame","soybeans canned",
               "soja edamame","haricots soja"],
@@ -2787,7 +2882,7 @@ const LOCAL_FOOD_DB = {
     nutrition: { kcal:970, protein:70, carbs:170, fat:5 },
   },
   "mais_conserve": {
-    label: "Maïs en conserve",
+    label: "Maïs en conserve", labelDE: "Mais in der Dose",
     aliases: ["mais en conserve","mais","mais boite","mais doux","zuckermais","canned corn","sweetcorn",
               "maïs","maïs conserve","maïs en boite","maïs boite",
               "boite de mais","boîte de maïs",
@@ -2797,6 +2892,7 @@ const LOCAL_FOOD_DB = {
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:860, protein:30, carbs:190, fat:15 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "consommer dans la journée",
   },
   "betteraves_rouges_conserve": {
     label: "Betteraves rouges en conserve",
@@ -2814,15 +2910,16 @@ const LOCAL_FOOD_DB = {
 
   /* ---- Nouveaux produits de l'inventaire réel ---- */
   "haferdrink_konzentrat": {
-    label: "Concentré de boisson d'avoine",
+    label: "Concentré de boisson d'avoine", labelDE: "Haferdrink-Konzentrat",
     aliases: ["haferdrink konzentrat","haferdrink konzentrat","concentre avoine","boisson avoine concentree",
               "oat drink concentrate","hafermilch konzentrat","avoine concentre"],
     category: "base", state: "dry", requiresCooking: false,
     waterNeed: "low", energyNeed: "none", generic: [],
     nutrition: { kcal:3900, protein:100, carbs:650, fat:80 },
+    openedLifeCold: "2–4 semaines si refermé au sec", openedLifeNoCold: "2–4 semaines si refermé au sec",
   },
   "sojamilch": {
-    label: "Boisson de soja (sojamilch)",
+    label: "Boisson de soja (sojamilch)", labelDE: "Sojamilch",
     aliases: ["sojamilch","boisson soja","lait soja","lait de soja","sojadrink",
               "soy milk","soya milk","soja drink","soja lait","soja milch","soja-milch",
               "sojamilch natur","soja milch natur","soja-milch natur",
@@ -2834,7 +2931,7 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "2–3 jours", openedLifeNoCold: "1 jour",
   },
   "haferdrink": {
-    label: "Boisson d'avoine",
+    label: "Boisson d'avoine", labelDE: "Hafermilch",
     aliases: ["boisson avoine","boisson d avoine","lait avoine","lait d avoine",
               "haferdrink","hafer drink","hafermilch","hafer milch","oat milk","oat drink"],
     category: "base", state: "liquid", requiresCooking: false,
@@ -2843,7 +2940,7 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "2–3 jours", openedLifeNoCold: "1 jour",
   },
   "mandeldrink": {
-    label: "Boisson d'amande",
+    label: "Boisson d'amande", labelDE: "Mandelmilch",
     aliases: ["boisson amande","boisson d amande","lait amande","lait d amande",
               "mandeldrink","mandel drink","mandelmilch","mandel milch","almond milk","almond drink"],
     category: "base", state: "liquid", requiresCooking: false,
@@ -2852,7 +2949,7 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "2–3 jours", openedLifeNoCold: "1 jour",
   },
   "reisdrink": {
-    label: "Boisson de riz",
+    label: "Boisson de riz", labelDE: "Reismilch",
     aliases: ["boisson riz","boisson de riz","lait riz","lait de riz",
               "reisdrink","reis drink","reismilch","reis milch","rice milk","rice drink"],
     category: "base", state: "liquid", requiresCooking: false,
@@ -2889,6 +2986,7 @@ const LOCAL_FOOD_DB = {
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:190, protein:14, carbs:35, fat:3 },
+    openedLifeCold: "3–5 jours", openedLifeNoCold: "consommer dans la journée",
   },
   /* ---- SNACKS SECS ---- */
   "salzstangen": {
@@ -2916,6 +3014,7 @@ const LOCAL_FOOD_DB = {
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:580, protein:10, carbs:120, fat:20 },
+    openedLifeCold: "1–2 jours", openedLifeNoCold: "quelques heures",
   },
   "linsen_gemuese_topf": {
     label: "Plat lentilles-légumes (conserve)",
@@ -2930,6 +3029,7 @@ const LOCAL_FOOD_DB = {
     category: "conserve", state: "ready", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:630, protein:34, carbs:86, fat:8 },
+    openedLifeCold: "2–3 jours", openedLifeNoCold: "consommer dans la journée",
   },
   "tomates_des_conserve": {
     label: "Tomates en dés",
@@ -2969,7 +3069,7 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "2–3 jours", openedLifeNoCold: "1 jour",
   },
   "ravioli_conserve": {
-    label: "Ravioli en conserve",
+    label: "Ravioli en conserve", labelDE: "Ravioli in der Dose",
     aliases: ["ravioli en conserve","ravioli conserve","ravioli boite",
               "ravioli boîte","dosenravioli","ravioli dose",
               "ravioli in der dose","ravioli mit tomatensauce",
@@ -3000,7 +3100,7 @@ const LOCAL_FOOD_DB = {
               "jeunes pousses d epinard","fresh spinach","edeka babyspinat","bio babyspinat"],
     category: "legume", state: "fresh", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
-    nutrition: { kcal:23, protein:2.9, carbs:3.6, fat:0.4 },
+    nutrition: { kcal:230, protein:29, carbs:36, fat:4 },
     openedLifeCold: "1–2 jours", openedLifeNoCold: "quelques heures",
   },
   "rucola": {
@@ -3008,7 +3108,7 @@ const LOCAL_FOOD_DB = {
     aliases: ["rucola","roquette","arugula","rocket salad","rauke","edeka rucola","bio rucola"],
     category: "legume", state: "fresh", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
-    nutrition: { kcal:25, protein:2.6, carbs:3.7, fat:0.7 },
+    nutrition: { kcal:250, protein:26, carbs:37, fat:7 },
     openedLifeCold: "1–2 jours", openedLifeNoCold: "quelques heures",
   },
   "salatmix_blueten": {
@@ -3018,7 +3118,7 @@ const LOCAL_FOOD_DB = {
               "salade avec fleurs","herzstucke salatmix","herzstücke salatmix","edeka salatmix"],
     category: "legume", state: "fresh", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
-    nutrition: { kcal:20, protein:1.8, carbs:3.0, fat:0.4 },
+    nutrition: { kcal:200, protein:18, carbs:30, fat:4 },
     openedLifeCold: "1–2 jours", openedLifeNoCold: "quelques heures",
   },
   "pomme_fraiche": {
@@ -3057,8 +3157,8 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "3 jours", openedLifeNoCold: "quelques heures",
   },
   "tempeh_lupin_sweet_chili": {
-    label: "Tempeh lupin sweet chili",
-    aliases: ["tempeh lupin sweet chili","lupinen tempeh sweet chili","lupinen-tempeh sweet chili","tempeh aux lupins","tempeh lupinen"],
+    label: "Tempeh lupin", labelDE: "Lupinen-Tempeh",
+    aliases: ["tempeh lupin","tempeh de lupin","tempeh aux lupins","tempeh lupinen","lupinen tempeh","lupinentempeh","tempeh aus lupinen"],
     category: "legumineuse", state: "fresh", requiresCooking: false,
     waterNeed: "none", energyNeed: "none", generic: [],
     nutrition: { kcal:1410, protein:170, carbs:56, fat:38 },
@@ -5070,7 +5170,7 @@ function renderFoodUnitDetailRows(item) {
       :                        '<span class="badge green">OK</span>';
     return `<tr class="unit-detail-row">
         <td style="padding-left:24px">↳ unité ${idx+1}/${item.units.length}</td>
-        <td>${unitQty}</td>
+        <td><span class="unit-qty-editable" onclick="editUnitQuantity(${item.id},${idx},this)">${unitQty}</span></td>
         <td>${item.expiry || "—"}</td>
         <td>${item.useFrom || "—"}</td>
         <td>${item.location || "—"}</td>
@@ -5177,7 +5277,19 @@ function renderTable() {
   const sortBy = document.getElementById("sort-by").value;
 
   let rows = [...inventory, ...manualFoods];
-  if (q) rows = rows.filter(r => r.name.toLowerCase().includes(q));
+  const normQ = q.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  if (q) rows = rows.filter(r => {
+    const rn = r.name.toLowerCase();
+    if (rn.normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(normQ)) return true;
+    // Fallback : chercher dans label FR, labelDE et aliases de la DB
+    const entry = getFoodDataSync(r.name);
+    if (entry && entry.data) {
+      const d = entry.data;
+      const searchStr = [d.label, d.labelDE, ...(d.aliases||[])].filter(Boolean).join(" ").toLowerCase();
+      return searchStr.normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(normQ);
+    }
+    return false;
+  });
   if (status === "expired") rows = rows.filter(r => ["expired","open_expired"].includes(itemStatus(r)));
   else if (status === "soon") rows = rows.filter(r => ["soon","open_soon","open_urgent","open_expired"].includes(itemStatus(r)));
   else if (status !== "all") rows = rows.filter(r => itemStatus(r) === status);
@@ -5802,7 +5914,7 @@ function parseQuickFoodInput(text) {
   // PRIORITÉ ABSOLUE : "N contenants [de] PRODUIT [de|à] POIDS unité"
   // Doit être testée AVANT toute extraction générale.
   // ════════════════════════════════════════════════════════
-  const _containerRe = /(\d+)\s+(?:bo[iî]tes?|bocaux?|paquets?|sachets?|bouteilles?|canettes?|briques?|pots?|dosen?|packungen?|packung|flaschen?|glas(?:er|aeser)?|beutel|conserves?|cartons?)\s+(?:de\s+)?(.+?)\s+(?:de\s+|[aà]\s+)?(\d+(?:[.,]\d+)?)\s*(g|kg|ml|l)\b/i;
+  const _containerRe = /(\d+)\s+(?:bo[iî]tes?|(?:bocal|bocaux)|paquets?|sachets?|bouteilles?|canettes?|briques?|pots?|dosen?|packungen?|packung|flaschen?|glas(?:er|aeser)?|beutel|conserves?|cartons?)\s+(?:de\s+)?(.+?)\s+(?:de\s+|[aà]\s+)?(\d+(?:[.,]\d+)?)\s*(g|kg|ml|l)\b/i;
   const _cm = t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").match(_containerRe);
   if (_cm) {
     const _count      = parseInt(_cm[1]);
@@ -5847,7 +5959,7 @@ function parseQuickFoodInput(text) {
         if (_nm) _expiry = `${String(parseInt(_nm[1],10)).padStart(2,"0")}.${_nm[2]}`;
       }
       // Nettoyer le nom du produit
-      const _pkgNoise = /\b(?:bo[iî]tes?|bocaux?|paquets?|sachets?|bouteilles?|canettes?|briques?|pots?|dosen?|packungen?|flaschen?|glas(?:er|aeser)?|beutel|cartons?|de|du|d|des|expiration|expire|expir|exp|date|dlc|dluo|en)\b/g;
+      const _pkgNoise = /\b(?:bo[iî]tes?|(?:bocal|bocaux)|paquets?|sachets?|bouteilles?|canettes?|briques?|pots?|dosen?|packungen?|flaschen?|glas(?:er|aeser)?|beutel|cartons?|de|du|d|des|expiration|expire|expir|exp|date|dlc|dluo|en)\b/g;
       let _name = _rawProd.replace(_pkgNoise," ").replace(/[,;.]/g," ").replace(/\d+/g," ").replace(/\s+/g," ").trim();
       if (!_name) return null;
       return { name: _name, qty: _count * _unitWeight, unit: _unitFinal, expiry: _expiry,
@@ -5896,7 +6008,7 @@ function parseQuickFoodInput(text) {
   // Le produit peut contenir plusieurs mots (haricots blancs, sauce curry…)
   // Le "de" entre emballage et produit est optionnel, idem entre produit et poids.
   // On capture le produit de façon GREEDY puis on cherche le poids en suffixe.
-  const pkgWordList = "boite[sx]?|bocaux?|sachets?|paquets?|bouteilles?|canettes?|briques?|pots?|dosen?|packungen?|packung|flaschen?|glas(?:er|aeser)?|beutel|conserves?|cartons?";
+  const pkgWordList = "boite[sx]?|(?:bocal|bocaux)|sachets?|paquets?|bouteilles?|canettes?|briques?|pots?|dosen?|packungen?|packung|flaschen?|glas(?:er|aeser)?|beutel|conserves?|cartons?";
   // Regex en deux passes : d'abord trouver count+emballage, puis extraire poids à la fin
   const pkgBlockRe  = new RegExp(
     "^(\\d+)\\s*(?:" + pkgWordList + ")\\s*(?:de\\s+)?(.+?)\\s+(?:de\\s+)?(\\d+(?:[.,]\\d+)?)\\s*([a-z]+)$"
@@ -5930,7 +6042,7 @@ function parseQuickFoodInput(text) {
   }
 
   // --- Multiplicateur simple : "3 boîtes de 160 g" (sans produit intercalé) ---
-  const pkgRe = /(\d+)\s*(?:boite[sx]?|bocaux?|sachets?|paquets?|bouteilles?|canettes?|briques?|pots?)\s+(?:de\s+)?(\d+(?:[.,]\d+)?)\s*([a-z]+)/;
+  const pkgRe = /(\d+)\s*(?:boite[sx]?|(?:bocal|bocaux)|sachets?|paquets?|bouteilles?|canettes?|briques?|pots?)\s+(?:de\s+)?(\d+(?:[.,]\d+)?)\s*([a-z]+)/;
   const pkgM  = !earlyName ? tNorm.match(pkgRe) : null;
   if (pkgM && unitMap[pkgM[3]]) {
     const count  = parseInt(pkgM[1]);
@@ -6099,7 +6211,7 @@ function parseQuickFoodInput(text) {
       if (name !== before) { changed = true; break; }
     }
   }
-  name = name.replace(/\b(bo[iî]tes?|bocaux?|paquets?|sachets?|bouteilles?|canettes?|briques?|pots?|masse)\b/gi, "")
+  name = name.replace(/\b(bo[iî]tes?|(?:bocal|bocaux)|paquets?|sachets?|bouteilles?|canettes?|briques?|pots?|masse)\b/gi, "")
              .replace(/\s+/g, " ").trim();
   // Si le motif prioritaire a capturé le nom directement, il est plus fiable
   if (earlyName) name = earlyName;
@@ -6237,6 +6349,16 @@ function getForcedCandidateKeysForQuery(rawName) {
     const isClearCan = /\b(conserve|boite|bocal|dose|vert|blanc|blancs|verts)\b/.test(n);
     if (isClearCan) return null;
     return ["haricots_rouges_secs","haricots_rouges_cuits","haricots_blancs","haricots_verts_conserve"];
+  }
+  // Termes generiques germination -> selection de tous les produits sprossen/keimsamen
+  if (/^keimsamen$/.test(n) || /^sprossen$/.test(n) || /^keimsprossen$/.test(n) ||
+      /^graines?.a.germer/.test(n) || /^graines?.germees?$/.test(n) ||
+      /^pousses?$/.test(n) || /^keimling/.test(n)) {
+    return ["graines_alfalfa","graines_bockshornklee","graines_kresse","graines_mungbohnen","graines_sprossen_mix"];
+  }
+  // Chili generique -> ambiguite viande / vegetarien
+  if (/^chili$/.test(n)) {
+    return ["chili_viande","chili_vegetarien"];
   }
   // Lentilles — sélection enrichie selon qualificateur
   if (/^lentille/.test(n) || /\blinsen\b/.test(n)) {
@@ -7382,6 +7504,45 @@ function deleteUnitFromItem(itemId, unitIdx) {
   renderSummary();
 }
 
+function editUnitQuantity(itemId, unitIdx, spanEl) {
+  // Éviter double-édition
+  if (spanEl.querySelector("input")) return;
+  const item = manualFoods.find(f => f.id === itemId);
+  if (!item || !Array.isArray(item.units) || !item.units[unitIdx]) return;
+  const unit = item.units[unitIdx];
+  const unitStr = item.unit || "g";
+  const currentKg = Number(unit.kg || (item.kg / item.units.length) || 0);
+  const currentQty = formatQtyFromKgAndUnit(currentKg, unitStr);
+  // Extraire la valeur numérique seule (sans unité)
+  const currentVal = parseFloat(currentQty) || (unitStr === "kg" ? currentKg : currentKg * 1000);
+
+  const inp = document.createElement("input");
+  inp.type = "number"; inp.min = "0"; inp.step = "any";
+  inp.value = parseFloat(currentVal.toFixed(1));
+  inp.className = "unit-qty-input";
+  spanEl.innerHTML = ""; spanEl.appendChild(inp);
+  inp.focus(); inp.select();
+
+  function commit() {
+    const raw = parseFloat(inp.value);
+    if (isNaN(raw) || raw < 0) { cancel(); return; }
+    // Convertir vers kg
+    const newKg = (unitStr === "kg") ? raw : (unitStr === "mg") ? raw/1e6 : (unitStr === "cl") ? raw/100 : (unitStr === "ml") ? raw/1000 : raw/1000;
+    unit.kg = Math.round(newKg * 10000) / 10000;
+    // Recalculer parent
+    item.kg  = item.units.reduce((s, u) => s + (Number(u.kg) || 0), 0);
+    item.qty = formatQtyFromKgAndUnit(item.kg, unitStr);
+    saveAppData(); renderTable(); renderSummary();
+  }
+  function cancel() { renderTable(); }
+
+  inp.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); commit(); }
+    if (e.key === "Escape") { e.preventDefault(); cancel(); }
+  });
+  inp.addEventListener("blur", () => commit());
+}
+
 function deleteItem(id) {
   manualFoods = manualFoods.filter(p=>p.id!==id);
   renderManualList(); renderTable();
@@ -7627,8 +7788,7 @@ function migrateWaterRotationFields() {
  * Uniquement informatif — n'influence aucun calcul d'autonomie.
  * Logique stricte : whitelist de labels canoniques DB + expressions complètes de boisson.
  */
-function computeComplementaryLiquids() {
-  // Labels canoniques exacts (LOCAL_FOOD_DB[*].label normalisé)
+function _getComplementaryLiquidItems() {
   const CANONICAL_LABELS = new Set([
     "boisson d avoine","boisson d'avoine",
     "boisson de soja","boisson soja",
@@ -7637,75 +7797,58 @@ function computeComplementaryLiquids() {
     "the glace vert matcha","thé glacé vert matcha",
     "jus de carotte","jus carotte",
     "jus de pomme","jus pomme",
-    "jus d orange","jus d'orange",
-    "jus de citron","jus citron",
+    "jus d orange","jus d'orange","jus de citron","jus citron",
     "jus de tomate","jus tomate",
     "lait uht","lait longue conservation",
-    "lait evapore","lait évapora",
-    "kombucha","kefir","kéfir",
+    "lait evapore","lait évapora","kombucha","kefir","kéfir",
     "sojamilch","haferdrink","hafermilch",
-    "mandeldrink","mandelmilch",
-    "reisdrink","reismilch",
+    "mandeldrink","mandelmilch","reisdrink","reismilch",
   ]);
-
-  // Expressions complètes de boisson pour le fallback (correspondance exacte de phrase)
   const DRINK_PHRASES = [
     "boisson de soja","boisson soja","soja drink",
     "boisson d avoine","boisson avoine","haferdrink","hafermilch",
     "boisson d amande","boisson amande","mandeldrink","mandelmilch",
-    "boisson de riz","reisdrink","reismilch",
-    "the glace","thé glacé","eistee",
+    "boisson de riz","reisdrink","reismilch","the glace","thé glacé","eistee",
     "jus de carotte","jus carotte","jus d orange","jus d'orange",
     "jus de pomme","jus pomme","jus de citron",
-    "lait uht","lait longue conservation","lait evapore",
-    "sojamilch","kombucha","kefir",
+    "lait uht","lait longue conservation","lait evapore","sojamilch","kombucha","kefir",
+    // boissons génériques FR
+    "biere","bière","bier","weizen","pils","lager","ale",
+    "vin blanc","vin rouge","vin rose","vin rosé","wein","wine",
+    "cidre","cider",
+    "cola","coca","pepsi","soda","limonade","limonade","lemonade",
+    "boisson gazeuse","boisson energetique","boisson énergétique",
+    "energie drink","energy drink","eistee",
+    "jus","saft","juice",
+    "milch","milk","lait",
+    "getrank","getränk","beverage","boisson",
+    "erfrischungsgétränk","erfrischungsgetrank",
   ];
-
+  const LIQUID_UNITS = new Set(["l","ml","cl","dl"]);
   const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
-
   const all = [...(Array.isArray(inventory)?inventory:[]),
                ...(Array.isArray(manualFoods)?manualFoods:[])];
-  let totalL = 0;
+  const items = [];
   all.forEach(item => {
+    if (!(item.kg > 0)) return;
     const n = norm(item.name || "");
-    // Test 1 : label canonique exact
-    const isCanonical = CANONICAL_LABELS.has(n);
-    // Test 2 : expression complète de boisson présente dans le nom
-    const isDrinkPhrase = !isCanonical && DRINK_PHRASES.some(p => n.includes(norm(p)));
-    if (!isCanonical && !isDrinkPhrase) return;
-    // Conversion : L direct ou kg (boissons stockées en kg ≈ L)
-    if (item.kg > 0) totalL += item.kg;
+    const isCanonical   = CANONICAL_LABELS.has(n);
+    const isDrinkPhrase = !isCanonical && DRINK_PHRASES.some(p => p.length > 2 && n.includes(norm(p)));
+    const isLiquidUnit  = LIQUID_UNITS.has(norm(item.unit || ""));
+    if (!isCanonical && !isDrinkPhrase && !isLiquidUnit) return;
+    items.push({ name: item.name, liters: item.kg, location: item.location || "" });
   });
-  return Math.round(totalL * 10) / 10;
+  return items;
+}
+
+function computeComplementaryLiquids() {
+  const items = _getComplementaryLiquidItems();
+  const total = items.reduce((s, it) => s + it.liters, 0);
+  return Math.round(total * 10) / 10;
 }
 
 function openComplementaryLiquidsModal() {
-  const CANONICAL_LABELS = new Set([
-    "boisson d avoine","boisson d'avoine","boisson de soja","boisson soja",
-    "boisson d amande","boisson d'amande","boisson de riz","boisson riz",
-    "the glace vert matcha","thé glacé vert matcha","jus de carotte","jus carotte",
-    "jus de pomme","jus pomme","jus d orange","jus d'orange","jus de citron","jus citron",
-    "jus de tomate","jus tomate","lait uht","lait longue conservation",
-    "lait evapore","lait évapora","kombucha","kefir","kéfir",
-    "sojamilch","haferdrink","hafermilch","mandeldrink","mandelmilch","reisdrink","reismilch",
-  ]);
-  const DRINK_PHRASES = [
-    "boisson de soja","boisson soja","soja drink","boisson d avoine","boisson avoine",
-    "haferdrink","hafermilch","boisson d amande","boisson amande","mandeldrink","mandelmilch",
-    "boisson de riz","reisdrink","reismilch","the glace","thé glacé","eistee",
-    "jus de carotte","jus carotte","jus d orange","jus d'orange","jus de pomme","jus pomme",
-    "jus de citron","lait uht","lait longue conservation","lait evapore","sojamilch","kombucha","kefir",
-  ];
-  const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
-  const all = [...(Array.isArray(inventory)?inventory:[]),...(Array.isArray(manualFoods)?manualFoods:[])];
-  const items = [];
-  all.forEach(item => {
-    const n = norm(item.name || "");
-    const isCanonical  = CANONICAL_LABELS.has(n);
-    const isDrinkPhrase = !isCanonical && DRINK_PHRASES.some(p => n.includes(norm(p)));
-    if (!isCanonical && !isDrinkPhrase) return;
-    if (item.kg > 0) items.push({ name: item.name, liters: item.kg, location: item.location || "" });
-  });
+  const items = _getComplementaryLiquidItems();
   const body = document.getElementById("compl-body");
   if (body) {
     if (items.length === 0) {
@@ -7937,7 +8080,8 @@ const VITAMIN_SOURCE_KEYWORDS = {
   // Vitamine K / folates / fibres (légumes verts, légumineuses)
   vitK:  ["epinard","spinat","brokkoli","brocoli","erbsen","pois","grünkohl",
           "linsen","lentilles","haricots","bohnen","kichererbsen","petersilie","persil",
-          "alfalfa","sprout","sprouts","germes","pousses","sprossen","keimsprossen","keimlinge"],
+          "alfalfa","sprout","sprouts","germes","pousses","sprossen","keimsprossen","keimlinge",
+          "fenugrec","bockshornklee","keimsamen","bockshorn"],
   // Probiotiques / fermentés (soutien immunitaire)
   ferm:  ["sauerkraut","choucroute","kefir","yaourt","yogurt","kimchi","miso"],
   // Fruits secs / noix (vitamine E)
@@ -9080,6 +9224,13 @@ function renderSummary() {
   if (summaryPanel && summaryPanel.classList.contains("active")) {
     runSummaryReveal(true);
   }
+  // Synchroniser le total liquides complémentaires (#w-compl) avec la source de vérité
+  const wComplEl2 = document.getElementById("w-compl");
+  if (wComplEl2) {
+    const _compItems = _getComplementaryLiquidItems();
+    const _compL = _compItems.reduce((s,it)=>s+it.liters,0);
+    wComplEl2.textContent = _compL > 0 ? (Math.round(_compL*10)/10).toFixed(1) : "0.0";
+  }
 }
 
 /* ===============================================
@@ -9284,6 +9435,27 @@ function openDoNotLoseModal() {
   const foodAlerts  = getFoodLossAlerts();
   let html = "";
 
+  // Section 0 : eau à ouvrir (contenants non ouverts) — EN PREMIER
+  const closedWaterItems = (Array.isArray(waters) ? waters : []).filter(w =>
+    Array.isArray(w.units) ? w.units.some(u => !u.openedAt) : (w.liters > 0)
+  );
+  if (closedWaterItems.length > 0) {
+    html += `<div class="dontlose-section-title">💧 Eau à ouvrir</div>`;
+    closedWaterItems.forEach(w => {
+      const units = Array.isArray(w.units) ? w.units : [];
+      const totalCount = units.length > 0 ? units.length : 1;
+      const unopenedL = units.length > 0
+        ? units.filter(u => !u.openedAt).reduce((s, u) => s + (u.liters || 0), 0)
+        : (w.liters || 0);
+      html += `<div class="dontlose-item">
+        <div class="dontlose-item-name">${w.name || "Eau"}
+          <div style="font-size:11px;color:var(--text3)">${totalCount} contenant${totalCount>1?"s":""} · ${unopenedL.toFixed(1)} L non ouverts</div>
+        </div>
+        <button class="dontlose-delete-btn" style="color:var(--accent)" onclick="openWaterFromModal(${w.id})">Ouvrir</button>
+      </div>`;
+    });
+  }
+
   // Section 1 : eau
   if (waterAlerts.length > 0) {
     html += `<div class="dontlose-section-title">💧 Eau à renouveler</div>`;
@@ -9415,6 +9587,18 @@ function closeDoNotLoseModal() {
   const overlay = document.getElementById("dontlose-overlay");
   if (overlay) overlay.classList.remove("open");
   document.body.style.overflow = "";
+}
+
+function openWaterFromModal(id) {
+  const w = waters.find(x => x.id === id);
+  if (!w) return;
+  // Si pas de units[], utiliser openWaterItem normalement (gérera la migration)
+  if (!Array.isArray(w.units) || w.units.length === 0) {
+    migrateWaterUnits();
+  }
+  openWaterItem(id);
+  renderSummary();
+  openDoNotLoseModal();
 }
 
 function renderLivingStock(summary, ad) {
