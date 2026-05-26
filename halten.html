@@ -778,6 +778,15 @@
     @media(max-width:540px) {
       .dontlose-item      { grid-template-columns:minmax(0,1fr) auto; }
       .dontlose-item-name { word-break:normal; overflow-wrap:break-word; }
+      .dontlose-unit-row  { display:inline-flex; }
+      .dontlose-item-badge { display:inline-block; margin-top:6px; }
+    }
+    /* ── Onboarding ── */
+    #onboarding-overlay { display:none; position:fixed; inset:0;
+                          background:rgba(0,0,0,.55); backdrop-filter:blur(4px);
+                          z-index:9999; align-items:flex-start; justify-content:center;
+                          padding-top:40px; }
+    @media(max-width:520px){ #onboarding-overlay { padding-top:22px; } }
     #onboarding-overlay.open { display:flex; }
     #onboarding-modal { background:#ffffff; border-radius:18px;
                         padding:28px 24px 32px;
