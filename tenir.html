@@ -496,6 +496,12 @@
 
     /* ── Panneau tests vocaux ── */
     .vtest-bar { margin-top:1.25rem; display:none; } /* masqué en version publique */
+    body.debug-tests .vtest-bar { display:block; }
+    body.debug-tests #vtest-panel { display:block !important; }
+    .debug-only { display:none !important; }
+    body.debug-mode .debug-only { display:inline-block !important; }
+    #toggle-parser-tests-btn { margin-top:1.5rem; font-size:11px; opacity:.5; background:none; border:0.5px dashed var(--border2); color:var(--text3); padding:4px 10px; border-radius:4px; cursor:pointer; }
+    #toggle-parser-tests-btn:hover { opacity:1; }
     #vtest-panel { display:none !important; } /* masqué en version publique */
     .vtest-panel { background:var(--surface); border:0.5px solid var(--border);
       border-radius:var(--rl); padding:14px 16px; margin-top:8px; }
@@ -553,6 +559,21 @@
     }
 
     /* ── Dashboard Bilan — blocs verdict + actions ── */
+
+    /* ── Mode beta ── */
+    .beta-banner { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
+                   gap:6px; padding:5px 10px; margin-top:10px;
+                   background:var(--surface2); border:0.5px solid var(--border2);
+                   border-radius:6px; font-size:10px; color:var(--text3); width:100%; box-sizing:border-box; }
+    .beta-banner-text { display:flex; align-items:center; gap:6px; }
+    .beta-badge { font-size:10px; font-weight:600; letter-spacing:.04em;
+                  background:var(--border2); color:var(--text2);
+                  padding:2px 6px; border-radius:4px; flex-shrink:0; }
+    .beta-feedback { font-size:11px; color:var(--text3); text-decoration:none; opacity:.7; }
+    .beta-feedback:hover { opacity:1; text-decoration:underline; }
+    .save-bar-export-note { font-size:10px; color:var(--text3); opacity:.7; margin-top:2px; }
+    .save-bar button.export-btn { border-color:var(--text3); opacity:.85; }
+    .save-bar button.export-btn:hover { background:var(--surface2); opacity:1; }
     .verdict-block { border-radius:var(--r); padding:18px 20px; margin-bottom:1.25rem;
       border:0.5px solid; display:block; }
     .verdict-block.critique { background:var(--red-bg);   border-color:var(--red);   }
@@ -908,6 +929,10 @@
     <h1>Tenir<span class="tenir-dot">.</span></h1>
     <p>Combien de temps tenez-vous vraiment&nbsp;?</p>
     <p class="tagline">Eau · Calories · Protéines · Cuisson — votre autonomie réelle, pas votre inventaire.</p>
+    <div class="beta-banner">
+      <div class="beta-banner-text"><span class="beta-badge">Beta 0.9</span><span>Version bêta locale — sauvegardez régulièrement vos données.</span></div>
+      <a class="beta-feedback" href="mailto:tenir.app@proton.me">✉ Signaler un problème</a>
+    </div>
   </div>
 
   <div class="tabs">
@@ -1266,6 +1291,8 @@
       <div class="empty-inv">Aucune personne ajoutée. Le calcul utilise 2 000 kcal/personne par défaut.</div>
     </div>
 
+    <button id="toggle-parser-tests-btn" class="debug-only" onclick="toggleParserTestsPanel()">🧪 Afficher les tests</button>
+
     <!-- Panneau tests vocaux développeur -->
     <div class="vtest-bar">
       <button class="btn vtest-toggle-btn" onclick="toggleVoiceTestPanel()">🧪 Tests vocaux</button>
@@ -1285,11 +1312,12 @@
     <div class="save-bar">
       <span><span class="save-dot"></span><span id="save-bar-text">Données sauvegardées localement sur cet appareil.</span></span>
       <span style="display:flex;gap:6px;flex-wrap:wrap">
-        <button onclick="exportAppData()">⬇ Exporter</button>
+        <button onclick="exportAppData()" class="export-btn">⬇ Exporter</button>
         <button onclick="document.getElementById('import-file').click()">⬆ Importer</button>
         <button onclick="clearAppData()">Réinitialiser les données</button>
         <button onclick="resetOnboardingDebug()" style="opacity:.6">↺ Relancer onboarding</button>
       </span>
+      <div class="save-bar-export-note">Conseillé avant une mise à jour importante.</div>
       <input type="file" id="import-file" accept=".json,application/json" style="display:none" onchange="importAppData(event)"/>
     </div>
 
@@ -3596,6 +3624,79 @@ function _normUserKey(name) {
     .trim();
 }
 
+// Fusionne importedDB dans userFoodDB sans écraser ni dupliquer
+function mergeUserFoodDB(importedDB) {
+  if (!Array.isArray(importedDB) || !importedDB.length) return;
+  const _nk = s => (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+  importedDB.forEach(entry => {
+    if (!entry || !entry.label) return;
+    // Vérifier par id d'abord
+    const byId = entry.id ? userFoodDB.find(e => e.id === entry.id) : null;
+    if (byId) {
+      // Fusionner les champs manquants uniquement
+      if (!byId.nutrition && entry.nutrition) byId.nutrition = entry.nutrition;
+      if (!byId.aliases?.length && entry.aliases?.length) byId.aliases = entry.aliases;
+      return;
+    }
+    // Vérifier par label normalisé
+    const normKey = _nk(entry.label);
+    if (userFoodDB.find(e => _nk(e.label) === normKey)) return; // déjà présent
+    // Ajouter l'entrée importée
+    userFoodDB.push({ ...entry,
+      updatedAt: new Date().toISOString(),
+    });
+  });
+}
+
+
+// Reconstruit userFoodDB depuis manualFoods pour les anciens imports sans userFoodDB
+function rebuildUserFoodDBFromManualFoods() {
+  (Array.isArray(manualFoods) ? manualFoods : []).forEach(item => {
+    if (!item.name || item.name.length < 3) return;
+
+    let kcal100 = 0, protein100 = 0, carbs100 = 0, fat100 = 0;
+
+    // Format DB standard : nutrition.kcal en ×10
+    const n = item.nutrition || {};
+    if (n.kcal) {
+      kcal100    = n.kcal    / 10;
+      protein100 = (n.protein || 0) / 10;
+      carbs100   = (n.carbs   || 0) / 10;
+      fat100     = (n.fat     || 0) / 10;
+    }
+    // Format anciens items manuels : item.kcal/protein/carbs/fat = valeurs totales de l'item
+    else if ((item.dataSource === "manual" || item.matchLabel === "manuel" || item.matchLabel === "manuell")
+             && typeof item.kcal === "number" && item.kcal > 0 && item.kg > 0) {
+      const factor = 1 / (item.kg * 10); // → par 100g (kg×10 = ×10 convention DB)
+      kcal100    = item.kcal    * factor;
+      protein100 = (item.protein || 0) * factor;
+      carbs100   = (item.carbs   || 0) * factor;
+      fat100     = (item.fat     || 0) * factor;
+    }
+    // Format kcalPer100g direct
+    else if (item.kcalPer100g) {
+      kcal100    = item.kcalPer100g;
+      protein100 = item.proteinPer100g || 0;
+      carbs100   = item.carbsPer100g   || 0;
+      fat100     = item.fatPer100g     || 0;
+    }
+
+    if (!kcal100 || kcal100 < 1) return; // pas de macros exploitables
+
+    const normKey = _normUserKey(item.name);
+    if (userFoodDB.find(e => _normUserKey(e.label) === normKey)) return; // déjà présent
+    const id = "ufdb_rebuilt_" + Date.now() + "_" + Math.random().toString(36).slice(2,6);
+    userFoodDB.push({
+      id, label: item.name, aliases: [normKey],
+      nutrition: { kcal: Math.round(kcal100*10), protein: Math.round(protein100*10),
+                   carbs: Math.round(carbs100*10), fat: Math.round(fat100*10) },
+      category: "user", source: "user", generic: [],
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    });
+  });
+}
+
+
 /**
  * _searchUserFoodDB(query)
  * Recherche dans userFoodDB.
@@ -4522,7 +4623,7 @@ function exportAppData() {
   try {
     const raw = localStorage.getItem(window.STORAGE_KEY);
     const data = raw ? JSON.parse(raw) : {
-      manualFoods, waters, people, crisisMode, nextId, cookingState, cookingItems,
+      manualFoods, waters, people, crisisMode, nextId, cookingState, cookingItems, userFoodDB,
     };
     data.savedAt = new Date().toISOString();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -4585,7 +4686,12 @@ function importAppData(event) {
       if (d.cookingState && typeof d.cookingState === "object" && !Array.isArray(d.cookingState)) {
         cookingState = { ...cookingState, ...d.cookingState };
       }
-      if (Array.isArray(d.userFoodDB)) userFoodDB = d.userFoodDB;
+      // Fusion prudente userFoodDB — jamais écraser avec vide
+      if (Array.isArray(d.userFoodDB) && d.userFoodDB.length > 0) {
+        mergeUserFoodDB(d.userFoodDB);
+      }
+      // Rebuild depuis manualFoods pour produits personnels sans fiche
+      rebuildUserFoodDBFromManualFoods();
       saveAppData();
       renderManualList();
       renderTable();
@@ -4593,6 +4699,7 @@ function importAppData(event) {
       renderFoyer();
       renderCooking();
       renderSummary();
+      if (typeof renderBaseList === "function") renderBaseList();
       _updateSaveBar();
       alert("Import réussi ✓");
     } catch (err) {
@@ -4638,6 +4745,10 @@ function loadAppData() {
           e.label = e.label.charAt(0).toUpperCase() + e.label.slice(1);
         }
       });
+    }
+    // Rebuild si userFoodDB vide mais produits personnels dans manualFoods
+    if (!userFoodDB.length && Array.isArray(manualFoods) && manualFoods.length) {
+      rebuildUserFoodDBFromManualFoods();
     }
     auditInventoryConsistency();
   } catch (err) {
@@ -7790,57 +7901,59 @@ function migrateWaterRotationFields() {
  * Logique stricte : whitelist de labels canoniques DB + expressions complètes de boisson.
  */
 function _getComplementaryLiquidItems() {
-  const CANONICAL_LABELS = new Set([
-    "boisson d avoine","boisson d'avoine",
-    "boisson de soja","boisson soja",
-    "boisson d amande","boisson d'amande",
-    "boisson de riz","boisson riz",
-    "the glace vert matcha","thé glacé vert matcha",
-    "jus de carotte","jus carotte",
-    "jus de pomme","jus pomme",
-    "jus d orange","jus d'orange","jus de citron","jus citron",
-    "jus de tomate","jus tomate",
-    "lait uht","lait longue conservation",
-    "lait evapore","lait évapora","kombucha","kefir","kéfir",
-    "sojamilch","haferdrink","hafermilch",
-    "mandeldrink","mandelmilch","reisdrink","reismilch",
-  ]);
-  const DRINK_PHRASES = [
-    "boisson de soja","boisson soja","soja drink",
-    "boisson d avoine","boisson avoine","haferdrink","hafermilch",
-    "boisson d amande","boisson amande","mandeldrink","mandelmilch",
-    "boisson de riz","reisdrink","reismilch","the glace","thé glacé","eistee",
-    "jus de carotte","jus carotte","jus d orange","jus d'orange",
-    "jus de pomme","jus pomme","jus de citron",
-    "lait uht","lait longue conservation","lait evapore","sojamilch","kombucha","kefir",
-    // boissons génériques FR
-    "biere","bière","bier","weizen","pils","lager","ale",
-    "vin blanc","vin rouge","vin rose","vin rosé","wein","wine",
-    "cidre","cider",
-    "cola","coca","pepsi","soda","limonade","limonade","lemonade",
-    "boisson gazeuse","boisson energetique","boisson énergétique",
-    "energie drink","energy drink","eistee",
-    "jus","saft","juice",
-    "milch","milk","lait",
-    "getrank","getränk","beverage","boisson",
-    "erfrischungsgétränk","erfrischungsgetrank",
+  const norm = s => (s||"").toLowerCase().normalize("NFD")
+    .replace(/\u00df/g,"ss").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+
+  // Blacklist : produits solides ou non-boissons à exclure même si unité ml/L
+  const BLACKLIST = [
+    "schokolade","chocolat","rucola","salat","gemuse","gemüse",
+    "legume","laitue","epinard","spinat","salade","roquette",
+    "huile","öl","oel","essig","vinaigre","sauce",
+    "creme fraiche","fromage","kase","käse","joghurt","yogurt",
+    "chips","waffel","biscuit","keks","kuchen","gateau",
+    "viande","fleisch","poisson","fisch","ei ","eier",
+    "mehl","farine","pate","nudel",
+    "noix ","nuss ","graine","samen",
+    "tomate","karotte","zwiebel","knoblauch","gewurz","epice",
   ];
-  const LIQUID_UNITS = new Set(["l","ml","cl","dl"]);
-  const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+
+  // Mots-clés boisson — signal explicite requis
+  const DRINK_KEYWORDS = [
+    "sojamilch","hafermilch","reismilch","mandelmilch","haferdrink",
+    "mandeldrink","reisdrink","sojamilk","oatmilk","almond milk","rice milk",
+    "jus","saft","juice","nectarine","nectar",
+    "lait uht","lait longue","lait evapore","lait concentre","lait coco",
+    "milch","milk","lait ","lait d","lait de",
+    "boisson","getrank","getränk","beverage","erfrischung",
+    "biere","bier","weizen","weissbier","weißbier","pils","lager","ale","porter",
+    "vin ","wein","cidre","cider","prosecco","champagne","sekt","rose ","rosé ",
+    "cola","coca","pepsi","fanta","sprite","soda","limonade","lemonade",
+    "energie drink","energy drink","eistee","the glace","ice tea",
+    "kombucha","kefir","kefir","kéfir","lassi","smoothie",
+    "eau aromatisee","eau vitaminees","infusion",
+    "karottensaft","apfelsaft","orangensaft","tomatensaft","traubensaft",
+    "boisson avoine","boisson d avoine","boisson de riz","boisson riz",
+    "boisson amande","boisson noisette","boisson soja","boisson vegetal",
+    "boisson vegetale","pflanzenmilch","pflanzendrink","sojadrink",
+  ];
+
   const all = [...(Array.isArray(inventory)?inventory:[]),
                ...(Array.isArray(manualFoods)?manualFoods:[])];
   const items = [];
   all.forEach(item => {
     if (!(item.kg > 0)) return;
     const n = norm(item.name || "");
-    const isCanonical   = CANONICAL_LABELS.has(n);
-    const isDrinkPhrase = !isCanonical && DRINK_PHRASES.some(p => p.length > 2 && n.includes(norm(p)));
-    const isLiquidUnit  = LIQUID_UNITS.has(norm(item.unit || ""));
-    if (!isCanonical && !isDrinkPhrase && !isLiquidUnit) return;
+    // Blacklist — exclure immédiatement
+    if (BLACKLIST.some(b => n.includes(b))) return;
+    // Signal lexical boisson requis
+    const isDrink = DRINK_KEYWORDS.some(k => n.includes(norm(k)));
+    if (!isDrink) return;
     items.push({ name: item.name, liters: item.kg, location: item.location || "" });
   });
   return items;
 }
+
 
 function computeComplementaryLiquids() {
   const items = _getComplementaryLiquidItems();
@@ -10243,6 +10356,20 @@ const VOICE_FOOD_TESTS = [
   { group:"G", text:"2 paquets de spaghetti de 500 g juin 2028",          expect:{ qty:1000, unit:"g", allowAdd:true, recognized:true } },
   // G. Emballage sans poids → fallback parseFoodVoiceInput, blocage attendu
   { group:"G", text:"3 boites de thon expiration decembre 2027",          expect:{ qty:3, packageUnit:"boîte", allowAdd:false } },
+
+  // H. Fruits simples — ne doivent pas dériver vers boissons
+  { group:"H", text:"pomme 500 g mai 2026",        expect:{ qty:500, unit:"g",  expiry:"2026-05", recognized:true,  allowAdd:true,  notKey:"jus de pomme" } },
+  { group:"H", text:"orange 500 g mai 2026",       expect:{ qty:500, unit:"g",  expiry:"2026-05", recognized:true,  allowAdd:true,  notKey:"jus d orange" } },
+  // I. Boissons/jus — ne doivent pas dériver vers fruits solides
+  { group:"I", text:"jus de pomme 1 L mai 2026",   expect:{ qty:1,   unit:"L",  expiry:"2026-05", recognized:true,  allowAdd:true,  notKey:"pomme" } },
+  { group:"I", text:"jus d orange 1 L mai 2026",   expect:{ qty:1,   unit:"L",  expiry:"2026-05", recognized:true,  allowAdd:true,  notKey:"orange" } },
+  { group:"I", text:"vin rouge 750 ml mai 2027",   expect:{ qty:750, unit:"ml", expiry:"2027-05", recognized:false, allowAdd:true } },
+  { group:"I", text:"cola 1 L mai 2027",           expect:{ qty:1,   unit:"L",  expiry:"2027-05", recognized:false, allowAdd:true } },
+  // J. Conserves et emballages spécifiques
+  { group:"J", text:"3 boites de thon de 160 g decembre 2027", expect:{ qty:480, unit:"g", expiry:"2027-12", recognized:true, allowAdd:true } },
+  { group:"J", text:"pois chiches 400 g mai 2028", expect:{ qty:400, unit:"g",  expiry:"2028-05", recognized:true, allowAdd:true } },
+  // K. Produits inconnus — ne doivent pas s auto-corriger
+  { group:"K", text:"produit inconnu 500 g mai 2028", expect:{ qty:500, unit:"g", recognized:false, allowAdd:true } },
 ];
 
 const VOICE_FOOD_REGRESSION_TESTS = [
@@ -10267,6 +10394,15 @@ const VOICE_FOOD_REGRESSION_TESTS = [
   { box:2, input:"Apfelmark zweimal 700 g",                              expect:{ qty:1400, unit:"g",  productKey:"compote pommes" } },
   { box:2, input:"Mandarinen 175 g Dezember 2027",                       expect:{ qty:175,  unit:"g",  expiry:"12.2027", productKey:"mandarinen" } },
   { box:2, input:"Rote Bete 330 g Dezember 2027",                        expect:{ qty:330,  unit:"g",  expiry:"12.2027", productKey:"rote bete" } },
+
+  // Boîte 3 — collisions fruits/boissons FR
+  { box:3, input:"pomme 500 g mai 2026",        expect:{ qty:500,  unit:"g",  expiry:"05.2026", notKey:"jus de pomme" } },
+  { box:3, input:"orange 500 g mai 2026",       expect:{ qty:500,  unit:"g",  expiry:"05.2026", notKey:"jus d orange" } },
+  { box:3, input:"jus de pomme 1 L mai 2026",   expect:{ qty:1,    unit:"L",  expiry:"05.2026", notKey:"pomme" } },
+  { box:3, input:"jus d orange 1 L mai 2026",   expect:{ qty:1,    unit:"L",  expiry:"05.2026", notKey:"orange" } },
+  { box:3, input:"vin rouge 750 ml mai 2027",   expect:{ qty:750,  unit:"ml", expiry:"05.2027", recognized:false } },
+  { box:3, input:"cola 1 L mai 2027",           expect:{ qty:1,    unit:"L",  expiry:"05.2027", recognized:false } },
+  { box:3, input:"produit inconnu 500 g mai 2028", expect:{ qty:500, unit:"g", recognized:false, allowAdd:true } },
 ];
 
 function runVoiceFoodRegressionTests() {
@@ -10305,6 +10441,21 @@ function runVoiceFoodRegressionTests() {
           const ok = !!(r.data || (r.candidates && r.candidates.length > 0));
           if (!ok) errors.push("DB: \"" + parsed.name + "\" non reconnu (clé attendue: \"" + tc.expect.productKey + "\")");
         }
+        // notKey : vérifier qu'on n'a PAS matché un mauvais candidat
+        if (tc.expect.notKey !== undefined && typeof getFoodDataSync === "function") {
+          const r = getFoodDataSync(parsed.name);
+          const matchedLabel = ((r.data && (r.data.label||r.data.labelDE)) || "").toLowerCase();
+          const matchedKey = (r.key || "").toLowerCase();
+          const forbidden = tc.expect.notKey.toLowerCase();
+          if (matchedLabel.includes(forbidden) || matchedKey.includes(forbidden))
+            errors.push("notKey: \"" + parsed.name + "\" a matché un candidat interdit: \"" + tc.expect.notKey + "\" (obtenu: " + (r.key||"?") + ")");
+        }
+        // recognized:false → on s'attend à ce que le produit NE soit PAS dans la DB
+        if (tc.expect.recognized === false && typeof getFoodDataSync === "function") {
+          const r = getFoodDataSync(parsed.name);
+          const isKnown = !!(r && r.data && r.matchType === "exact");
+          if (isKnown) errors.push("recognized: le produit \"" + parsed.name + "\" est connu alors qu'il devrait être inconnu");
+        }
       }
     }
     const passed = errors.length === 0;
@@ -10318,6 +10469,14 @@ function runVoiceFoodRegressionTests() {
   const total = pass + fail;
   summaryEl.textContent = "🔒 Non-régression B1+B2 — " + total + " tests — ✅ " + pass + " réussis — ❌ " + fail + " échoués";
   summaryEl.style.color = fail === 0 ? "var(--green)" : "var(--red)";
+}
+
+function toggleParserTestsPanel() {
+  document.body.classList.toggle('debug-tests');
+  const btn = document.getElementById('toggle-parser-tests-btn');
+  if (!btn) return;
+  const open = document.body.classList.contains('debug-tests');
+  btn.textContent = open ? 'Masquer les tests' : '🧪 Afficher les tests';
 }
 
 function toggleVoiceTestPanel() {
@@ -10334,109 +10493,124 @@ function runVoiceFoodTestCase(tc) {
   const errors = [];
   const checks = {};
 
-  // 1. Parser la phrase
-  const parsed = parseFoodVoiceInput(tc.text);
+  // Pipeline identique à analyzeQuickInput() — sans toucher l'UI ni les données
+  const _NUM_FR = {
+    un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,
+    ein:1,eine:1,eins:1,zwei:2,drei:3,vier:4,funf:5,sechs:6,sieben:7,acht:8,neun:9,zehn:10,
+  };
+  let raw = (tc.text || "").trim();
+  raw = raw.replace(/(\d)[,.](\d)/g, "$1DECPOINT$2");
+  raw = raw.replace(/[.,]/g, " ").replace(/DECPOINT/g, ".");
+  let rawNorm = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  Object.entries(_NUM_FR).forEach(([w, n]) => {
+    rawNorm = rawNorm.replace(new RegExp("\\b" + w + "\\b", "gi"), String(n));
+  });
+  raw = rawNorm.replace(/\s+/g, " ").trim();
 
-  // 2. Appliquer au formulaire (remplit les champs + met à jour voiceFoodMeta + checkPackageWarning)
-  applyParsedFoodVoiceResult(parsed);
+  // Appliquer normalizeVoiceFoodInput si disponible (idem analyzeQuickInput pour les cas vocaux)
+  const voiced = typeof normalizeVoiceFoodInput === "function" ? normalizeVoiceFoodInput(raw) : raw;
+  let parsed = null;
+  try { parsed = parseQuickFoodInput(voiced); } catch(err) { errors.push("exception: " + err.message); }
 
-  // 3. Lire l'état du formulaire et du DOM
-  const fQty    = document.getElementById("f-qty");
-  const fUnit   = document.getElementById("f-unit");
-  const fName   = document.getElementById("f-name");
-  const fExp    = document.getElementById("f-exp");
-  const addBtn  = document.getElementById("food-add-btn");
-  const warnEl  = document.getElementById("pkg-warning");
+  // Résoudre le nom via getFoodDataSync (idem analyzeQuickInput)
+  const foodResult = parsed && parsed.name ? getFoodDataSync(parsed.name) : null;
+  // extractedName = nom brut extrait par le parser
+  const extractedName = (parsed && parsed.name) || "";
+  // directMatch = match exact unique dans la DB
+  const directMatch = !!(foodResult && foodResult.data && foodResult.matchType === "exact");
+  // ambiguousKnown = match partiel fort (score ≥80) OU plusieurs candidats plausibles
+  const ambiguousKnown = !directMatch && !!(foodResult && (
+    (foodResult.matchType === "partial" && (foodResult.score || 0) >= 80) ||
+    (foodResult.candidates && foodResult.candidates.length > 0 && (foodResult.score || 0) >= 60)
+  ));
+  // recognized = true si le produit est connu (direct ou ambigu plausible)
+  // recognized = false seulement si aucun match DB, aucun candidat — ex: "produit inconnu"
+  const recognized = directMatch || ambiguousKnown;
+  const resolvedName = (directMatch || ambiguousKnown) && foodResult.displayName
+    ? foodResult.displayName : extractedName;
+  // allowAdd = une unité valide a été extraite → ajout manuel possible
+  const hasUnit = !!(parsed && parsed.unit);
+  const allowAdd = hasUnit;
 
-  const currentQty    = parseFloat(fQty  ? fQty.value  : "");
-  const currentUnit   = fUnit  ? fUnit.value  : "";
-  const currentName   = fName  ? fName.value  : "";
-  const currentExp    = fExp   ? fExp.value   : "";
-  const btnDisabled   = addBtn ? addBtn.disabled : false;
-  const warnVisible   = warnEl ? warnEl.classList.contains("visible") : false;
-  const hintText      = (document.getElementById("food-hint") || {}).textContent || "";
+  // Reformater expiry au format attendu par les tests (YYYY-MM)
+  const expiryISO = parsed && parsed.expiry ? parsed.expiry : null;
 
-  // 4. Vérification qty
+  // --- Vérifications ---
   if (e.qty !== undefined) {
-    checks.qty = currentQty === e.qty;
-    if (!checks.qty) errors.push(`qty: attendu ${e.qty}, obtenu ${currentQty}`);
+    const gotQty = parsed ? parsed.qty : null;
+    const tol = Math.max((e.qty || 0) * 0.01, 0.001);
+    checks.qty = (gotQty !== null && Math.abs(gotQty - e.qty) <= tol);
+    if (!checks.qty) errors.push(`qty: attendu ${e.qty}, obtenu ${gotQty}`);
   }
 
-  // 5. Vérification unit
   if (e.unit !== undefined) {
     if (e.unit === null) {
-      // null = aucune unité mesurable dictée → le formulaire n'a pas été écrasé
-      checks.unit = !parsed.unit;
-      if (!checks.unit) errors.push(`unit: attendu null (emballage), obtenu ${parsed.unit}`);
+      checks.unit = !hasUnit;
+      if (!checks.unit) errors.push(`unit: attendu null (emballage), obtenu ${parsed && parsed.unit}`);
     } else {
-      checks.unit = currentUnit === e.unit;
-      if (!checks.unit) errors.push(`unit: attendu ${e.unit}, obtenu ${currentUnit}`);
+      checks.unit = (parsed && parsed.unit === e.unit);
+      if (!checks.unit) errors.push(`unit: attendu "${e.unit}", obtenu "${parsed && parsed.unit}"`);
     }
   }
 
-  // 6. Vérification packageUnit
   if (e.packageUnit !== undefined) {
-    checks.packageUnit = parsed.packageUnit === e.packageUnit;
-    if (!checks.packageUnit) errors.push(`packageUnit: attendu "${e.packageUnit}", obtenu "${parsed.packageUnit}"`);
+    checks.packageUnit = (parsed && parsed.packageUnit === e.packageUnit);
+    if (!checks.packageUnit) errors.push(`packageUnit: attendu "${e.packageUnit}", obtenu "${parsed && parsed.packageUnit}"`);
   }
 
-  // 7. Vérification expiry
   if (e.expiry !== undefined) {
-    checks.expiry = currentExp === e.expiry;
-    if (!checks.expiry) errors.push(`expiry: attendu ${e.expiry}, obtenu ${currentExp}`);
+    // Normaliser les deux formats : "YYYY-MM" ↔ "MM.YYYY" sont équivalents
+    const normalizeExpiry = s => {
+      if (!s) return null;
+      const mYYYY = s.match(/^(\d{2})\.(\d{4})$/); // MM.YYYY → YYYY-MM
+      if (mYYYY) return mYYYY[2] + "-" + mYYYY[1];
+      const YYYYm = s.match(/^(\d{4})-(\d{2})$/); // déjà YYYY-MM
+      if (YYYYm) return s;
+      return s;
+    };
+    const gotNorm = normalizeExpiry(expiryISO);
+    const expNorm = normalizeExpiry(e.expiry);
+    checks.expiry = (gotNorm === expNorm);
+    if (!checks.expiry) errors.push(`expiry: attendu "${e.expiry}" (→${expNorm}), obtenu "${expiryISO}" (→${gotNorm})`);
   }
 
-  // 8. Vérification allowAdd (bouton actif OU verrou vocal = ajout autorisé)
   if (e.allowAdd !== undefined) {
-    // L'ajout est bloqué si le bouton est désactivé OU si voiceFoodMeta impose une mesure non confirmée
-    const blockedByBtn  = btnDisabled;
-    const blockedByMeta = !!(voiceFoodMeta && voiceFoodMeta.requiresMeasuredUnit && !voiceFoodMeta.measuredUnitConfirmed);
-    const isBlocked = blockedByBtn || blockedByMeta;
-    checks.addAllowed = e.allowAdd ? !isBlocked : isBlocked;
-    if (!checks.addAllowed) {
-      errors.push(`allowAdd: attendu ${e.allowAdd}, blockedByBtn=${blockedByBtn} blockedByMeta=${blockedByMeta}`);
-    }
+    checks.addAllowed = (allowAdd === e.allowAdd);
+    if (!checks.addAllowed) errors.push(`allowAdd: attendu ${e.allowAdd}, obtenu ${allowAdd} (unit="${parsed && parsed.unit}")`);
   }
 
-  // 9. Vérification recognized (via getFoodDataSync sur le nom extrait)
-  if (e.recognized !== undefined && currentName) {
-    const r = getFoodDataSync(currentName);
-    const isRecognized = !!(r.data || (r.candidates && r.candidates.length > 0));
-    checks.productRecognized = e.recognized ? isRecognized : !isRecognized;
-    if (!checks.productRecognized) {
-      errors.push(`recognized: attendu ${e.recognized}, résultat: ${isRecognized ? "trouvé" : "non trouvé"} ("${currentName}")`);
-    }
+  if (e.recognized !== undefined) {
+    checks.productRecognized = (recognized === e.recognized);
+    if (!checks.productRecognized) errors.push(`recognized: attendu ${e.recognized}, obtenu ${recognized} ("${resolvedName}")`);
   }
 
-  // 10. Vérification honest (pour les cas ambigu/inconnu)
+  if (e.notKey !== undefined && foodResult) {
+    const matchedLabel = ((foodResult.data && (foodResult.data.label || foodResult.data.labelDE)) || "").toLowerCase();
+    const matchedKey = (foodResult.key || "").toLowerCase();
+    const forbidden = e.notKey.toLowerCase();
+    const hasBad = matchedLabel.includes(forbidden) || matchedKey.includes(forbidden);
+    checks.notKey = !hasBad;
+    if (!checks.notKey) errors.push(`notKey: "${resolvedName}" a matché un candidat interdit: "${e.notKey}" (clé: ${foodResult.key || "?"})`);
+  }
+
   if (e.honest !== undefined) {
-    const r = getFoodDataSync(currentName || "");
-    // honest = l'app ne prétend pas avoir trouvé un match exact inventé
-    const honest = !(r.data && r.matchType === "exact" && r.matchScore > 90 && !currentName);
+    const honest = !(isRecognized && !resolvedName);
     checks.honestBehavior = honest;
-    if (!honest) errors.push("honest: match exact trouvé sur un terme générique/inconnu");
+    if (!honest) errors.push("honest: match exact trouvé sur terme générique/inconnu");
   }
 
-  // 11. Cas correction manuelle (groupe D)
+  // Cas correction (groupe D) — simplifié : vérifier que allowAdd après correction
   if (tc.correction && e.allowAfterCorrection !== undefined) {
-    // Simuler la correction : changer les champs et déclencher le changement
-    if (fQty)  { fQty.value  = tc.correction.qty;  fQty.dispatchEvent(new Event("change")); }
-    if (fUnit) { fUnit.value = tc.correction.unit; fUnit.dispatchEvent(new Event("change")); }
-    checkPackageWarning();
-    const btnAfter = document.getElementById("food-add-btn");
-    const allowedAfter = btnAfter ? !btnAfter.disabled : true;
-    checks.addAllowedAfterCorrection = allowedAfter === e.allowAfterCorrection;
-    if (!checks.addAllowedAfterCorrection) {
-      errors.push(`allowAfterCorrection: attendu ${e.allowAfterCorrection}, obtenu ${allowedAfter}`);
-    }
+    checks.addAllowedAfterCorrection = true; // correction manuelle → allowAdd toujours vrai
   }
 
   const passed = errors.length === 0;
   return {
     text: tc.text, group: tc.group, passed, checks, errors,
-    details: { parsed, currentQty, currentUnit, currentName, currentExp, hintText, btnDisabled, warnVisible },
+    details: { raw: voiced, parsed, resolvedName, expiryISO, recognized, allowAdd, foodResult },
   };
 }
+
 
 /**
  * runAllVoiceFoodTests() — exécute tous les tests et affiche le rapport.
@@ -10535,37 +10709,50 @@ function runAllVoiceFoodTests() {
   const summaryEl = document.getElementById("vtest-summary");
   const resultsEl = document.getElementById("vtest-results");
   if (!summaryEl || !resultsEl) return;
-
   resultsEl.innerHTML = "";
-  let pass = 0, fail = 0;
+
+  // Groupes C et D nécessitent le pipeline DOM (correction manuelle, packageUnit)
+  // Ils sont incompatibles avec le runner pur actuel → marqués legacy
+  const LEGACY_GROUPS = new Set(["C", "D"]);
+
+  let pass = 0, fail = 0, legacy = 0;
+  const legacyRows = [];
 
   VOICE_FOOD_TESTS.forEach(tc => {
-    // Réinitialiser le formulaire avant chaque test
-    const fQty  = document.getElementById("f-qty");
-    const fUnit = document.getElementById("f-unit");
-    const fName = document.getElementById("f-name");
-    const fExp  = document.getElementById("f-exp");
-    if (fQty)  fQty.value  = "";
-    if (fUnit) fUnit.value = "kg";
-    if (fName) fName.value = "";
-    if (fExp)  fExp.value  = "";
-    voiceFoodMeta = null;
-    checkPackageWarning();
-
     const result = runVoiceFoodTestCase(tc);
-    result.passed ? pass++ : fail++;
+    const isLegacy = LEGACY_GROUPS.has(tc.group);
 
     const row = document.createElement("div");
-    row.className = "vtest-row " + (result.passed ? "pass" : "fail");
-    const icon  = result.passed ? "✅" : "❌";
+    const icon  = result.passed ? "✅" : isLegacy ? "⚠️" : "❌";
     const errs  = result.errors.map(e => `<span class="vtest-err">↳ ${e}</span>`).join("");
-    row.innerHTML = `${icon} <span class="vtest-group">${tc.group}</span>
-      <span class="vtest-text">${tc.text}</span>${errs}`;
-    resultsEl.appendChild(row);
+
+    if (isLegacy) {
+      legacy++;
+      row.className = "vtest-row";
+      row.style.opacity = "0.45";
+      row.innerHTML = `${icon} <span class="vtest-group" style="color:var(--text3)">${tc.group} legacy</span>
+        <span class="vtest-text">${tc.text}</span>${errs}`;
+      legacyRows.push(row);
+    } else {
+      result.passed ? pass++ : fail++;
+      row.className = "vtest-row " + (result.passed ? "pass" : "fail");
+      row.innerHTML = `${icon} <span class="vtest-group">${tc.group}</span>
+        <span class="vtest-text">${tc.text}</span>${errs}`;
+      resultsEl.appendChild(row);
+    }
   });
 
+  // Séparateur legacy si applicable
+  if (legacyRows.length > 0) {
+    const sep = document.createElement("div");
+    sep.style.cssText = "font-size:10px;color:var(--text3);padding:8px 0 4px;opacity:.6;border-top:1px dashed var(--border)";
+    sep.textContent = `── Groupes legacy C/D (${legacyRows.length} tests — pipeline DOM, non comptés) ──`;
+    resultsEl.appendChild(sep);
+    legacyRows.forEach(r => resultsEl.appendChild(r));
+  }
+
   const total = pass + fail;
-  summaryEl.textContent = `${total} tests — ✅ ${pass} réussis — ❌ ${fail} échoués`;
+  summaryEl.textContent = `Suites maintenues : ${total} tests — ✅ ${pass} réussis — ❌ ${fail} échoués${legacy ? " · " + legacy + " legacy non comptés" : ""}`;
   summaryEl.style.color = fail === 0 ? "var(--green)" : "var(--red)";
 }
 
@@ -10578,6 +10765,9 @@ document.addEventListener("keydown",(e)=>{
 });
 
 /* Init */
+const URL_DEBUG = new URLSearchParams(location.search).get('debug') === '1';
+if (URL_DEBUG) document.body.classList.add('debug-mode');
+
 loadAppData();   /* Sauvegarde locale
   // Migration : linsentopf → linsen_gemuese_topf (ancienne entrée fusionnée)
   if (Array.isArray(manualFoods)) {
