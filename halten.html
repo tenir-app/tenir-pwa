@@ -9150,20 +9150,27 @@ function suggestProteinFoods(proteinGapG) {
  */
 function suggestCalorieFoods(kcalGap) {
   if (!kcalGap || kcalGap <= 0) return [];
+  // kcalPer100g = valeurs réelles (pas notation ×10)
   const sources = [
-    { name: "Olivenöl",       kcalPer100g: 900,  liquid: true },
-    { name: "Reis (trocken)", kcalPer100g: 3500, liquid: false },
-    { name: "Nudeln (trocken)", kcalPer100g: 3500, liquid: false },
+    { name: "Olivenöl",         kcalPer100g: 884,  liquid: true  },
+    { name: "Reis (trocken)",   kcalPer100g: 350,  liquid: false },
+    { name: "Nudeln (trocken)", kcalPer100g: 350,  liquid: false },
   ];
-  return sources.slice(0, 3).map(s => {
-    const gNeeded = Math.round(kcalGap / (s.kcalPer100g / 100));
-    const rounded = Math.ceil(gNeeded / 100) * 100;
+  return sources.map(s => {
+    const gNeeded = kcalGap / (s.kcalPer100g / 100); // grammes exacts
     if (s.liquid) {
-      return rounded >= 1000
-        ? `${(rounded / 1000).toFixed(1).replace(".0","").replace(".",",")} L ${s.name}`
-        : `${rounded} ml ${s.name}`;
+      // arrondir à la dizaine de ml
+      const ml = Math.round(gNeeded / 10) * 10;
+      return ml >= 1000
+        ? `${(ml/1000).toFixed(1).replace('.0','').replace('.',',')} L ${s.name}`
+        : `${ml} ml ${s.name}`;
+    } else {
+      // arrondir à la dizaine de grammes
+      const g = Math.round(gNeeded / 50) * 50;
+      return g >= 1000
+        ? `${(g/1000).toFixed(2).replace(/\.?0+$/,'').replace('.',',')} kg ${s.name}`
+        : `${g} g ${s.name}`;
     }
-    return `${rounded} g ${s.name}`;
   });
 }
 
@@ -9419,8 +9426,8 @@ function renderSummary() {
         const kcalManquantes = Math.round(joursManquants * dailyKcal);
         const suggestions    = suggestCalorieFoods(kcalManquantes);
         if (suggestions.length > 0) {
-          badgeText = `Für ~${Math.round(cible)} Tage Reichweite aller Grundressourcen\nfehlen ca. ${kcalManquantes.toLocaleString("de-DE")} kcal.\n\nEine Möglichkeit:\n`
-            + suggestions.map((s, i) => i === 0 ? `• ${s}` : `• oder ${s}`).join("\n");
+          badgeText = `Für ~${Math.round(cible)} Tage Reichweite aller Grundressourcen\nfehlen ca. ${kcalManquantes.toLocaleString("de-DE")} kcal.\n\nKalorische Äquivalente (je ca. ${kcalManquantes.toLocaleString("de-DE")} kcal):\n`
+            + suggestions.map(s => `• ${s}`).join("\n");
         } else {
           badgeText = `Mit ca. ${kcalManquantes.toLocaleString("de-DE")} kcal mehr wird Ihre Autonomie ausgeglichen auf ${Math.round(cible)} Tage.`;
         }
@@ -9432,8 +9439,8 @@ function renderSummary() {
         const grammesManquants = Math.round(joursManquants * dailyProtein);
         const suggestions      = suggestProteinFoods(grammesManquants);
         if (suggestions.length > 0) {
-          badgeText = `Für ~${Math.round(cible)} Tage Reichweite aller Grundressourcen\nfehlen ca. ${grammesManquants} g Eiweiß.\n\nEine Möglichkeit:\n`
-            + suggestions.map((s, i) => i === 0 ? `• ${s}` : `• oder ${s}`).join("\n");
+          badgeText = `Für ~${Math.round(cible)} Tage Reichweite aller Grundressourcen\nfehlen ca. ${grammesManquants} g Eiweiß.\n\nEiweißäquivalente (je ca. ${grammesManquants} g Eiweiß):\n`
+            + suggestions.map(s => `• ${s}`).join("\n");
         } else {
           badgeText = `Mit ca. ${grammesManquants} g mehr Eiweiß wird Ihre Autonomie ausgeglichen auf ${Math.round(cible)} Tage.`;
         }

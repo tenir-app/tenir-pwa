@@ -8703,21 +8703,25 @@ function suggestProteinFoods(proteinGapG) {
  */
 function suggestCalorieFoods(kcalGap) {
   if (!kcalGap || kcalGap <= 0) return [];
+  // kcalPer100g = valeurs réelles (pas notation ×10)
   const sources = [
-    { name: "huile d'olive",   kcalPer100g: 900,  liquid: true },
-    { name: "riz (sec)",        kcalPer100g: 3500, liquid: false },
-    { name: "pâtes (sèches)",   kcalPer100g: 3500, liquid: false },
+    { name: "huile d'olive",   kcalPer100g: 884,  liquid: true  },
+    { name: "riz (sec)",        kcalPer100g: 350,  liquid: false },
+    { name: "pâtes (sèches)",   kcalPer100g: 350,  liquid: false },
   ];
-  return sources.slice(0, 3).map(s => {
-    const gNeeded = Math.round(kcalGap / (s.kcalPer100g / 100));
-    const rounded = Math.ceil(gNeeded / 100) * 100;
+  return sources.map(s => {
+    const gNeeded = kcalGap / (s.kcalPer100g / 100);
     if (s.liquid) {
-      // 1 g ≈ 1 ml pour les huiles/liquides
-      return rounded >= 1000
-        ? `${(rounded / 1000).toFixed(1).replace(".0","").replace(".",",")} L de ${s.name}`
-        : `${rounded} ml de ${s.name}`;
+      const ml = Math.round(gNeeded / 10) * 10;
+      return ml >= 1000
+        ? `${(ml/1000).toFixed(1).replace('.0','').replace('.',',')} L de ${s.name}`
+        : `${ml} ml de ${s.name}`;
+    } else {
+      const g = Math.round(gNeeded / 50) * 50;
+      return g >= 1000
+        ? `${(g/1000).toFixed(2).replace(/\.?0+$/,'').replace('.',',')} kg de ${s.name}`
+        : `${g} g de ${s.name}`;
     }
-    return `${rounded} g de ${s.name}`;
   });
 }
 
@@ -8980,8 +8984,8 @@ function renderSummary() {
         const kcalManquantes = Math.round(joursManquants * dailyKcal);
         const suggestions    = suggestCalorieFoods(kcalManquantes);
         if (suggestions.length > 0) {
-          badgeText = `Pour atteindre ~${Math.round(cible)} jours d'autonomie équilibrée,\nil manque environ ${kcalManquantes.toLocaleString("fr-FR")} kcal.\n\nUne option suffit :\n`
-            + suggestions.map((s, i) => i === 0 ? `• ${s}` : `• ou ${s}`).join("\n");
+          badgeText = `Pour atteindre ~${Math.round(cible)} jours d'autonomie équilibrée,\nil manque environ ${kcalManquantes.toLocaleString("fr-FR")} kcal.\n\nÉquivalents caloriques (chacun ≈ ${kcalManquantes.toLocaleString("fr-FR")} kcal) :\n`
+            + suggestions.map(s => `• ${s}`).join("\n");
         } else {
           badgeText = `Si vous ajoutez environ ${kcalManquantes.toLocaleString("fr-FR")} kcal, votre autonomie devient équilibrée à ${Math.round(cible)} jours.`;
         }
