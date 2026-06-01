@@ -7485,13 +7485,14 @@ function showCandidatePanel(candidates, searchResult) {
           setHint(`⚠ « ${c.name} » n'a pas de données nutritionnelles complètes.`, "var(--amber)");
           return;
         }
+        const isUserCandidate = c.source === "user";
         const chosenResult = {
           data:           c.data,
-          dataSource:     c.matchType === "exact" ? "local_exact" : "local_partial",
+          dataSource:     isUserCandidate ? "user_exact" : (c.matchType === "exact" ? "local_exact" : "local_partial"),
           matchScore:     c.score,
           matchType:      c.matchType,
-          matchLabel:     c.matchType === "exact" ? "exact" : "proche",
-          source:         "local",
+          matchLabel:     isUserCandidate ? "personnel" : (c.matchType === "exact" ? "exact" : "proche"),
+          source:         isUserCandidate ? "userFoodDB" : "local",
           candidates,
           displayName:    c.name,
           apiProductName: null,

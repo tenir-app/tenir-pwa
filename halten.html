@@ -7936,13 +7936,14 @@ function showCandidatePanel(candidates, searchResult) {
           setHint(`⚠ „${displayName}" hat keine vollständigen Nährwertdaten.`, "var(--amber)");
           return;
         }
+        const isUserCandidate = c.source === "user";
         const chosenResult = {
           data:           c.data,
-          dataSource:     c.matchType === "exact" ? "local_exact" : "local_partial",
+          dataSource:     isUserCandidate ? "user_exact" : (c.matchType === "exact" ? "local_exact" : "local_partial"),
           matchScore:     c.score,
           matchType:      c.matchType,
-          matchLabel:     c.matchType === "exact" ? "exakt" : "nah",
-          source:         "local",
+          matchLabel:     isUserCandidate ? "eigene Daten" : (c.matchType === "exact" ? "exakt" : "nah"),
+          source:         isUserCandidate ? "userFoodDB" : "local",
           candidates,
           displayName,
           displayNameDE:  c.nameDE || null,
