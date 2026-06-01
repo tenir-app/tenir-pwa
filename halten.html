@@ -1035,6 +1035,8 @@
           </div>
           <div class="scan-preview-actions">
             <button class="btn btn-scan-confirm" id="scan-confirm-btn" onclick="scanConfirm()">✓ Bestätigen &amp; weiter</button>
+            <button class="btn" style="background:var(--surface2)" onclick="scanManualEntry()">✏ Manuelle Eingabe</button>
+            <button class="btn" style="background:var(--surface2)" onclick="scanChooseFromBase()">📖 Lebensmittelbasis</button>
             <button class="btn btn-scan-cancel" onclick="scanCancel()">Neu eingeben</button>
           </div>
         </div>
@@ -4304,6 +4306,17 @@ function getFoodDataSync(name) {
   if (userMatches.length) {
     const best = userMatches[0];
     const entry = best.entry;
+    // Garde anti-générique : commit direct seulement si la query couvre ≥80% des tokens du nom personnel
+    const _normQ2 = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g," ").replace(/\s+/g," ").trim();
+    const _qTok = _normQ2(searchQuery).split(" ").filter(t => t.length > 1);
+    const _nTok = _normQ2(entry.label).split(" ").filter(t => t.length > 1);
+    const _coverage = _nTok.length > 0
+      ? _qTok.filter(qt => _nTok.some(nt => nt === qt || nt.startsWith(qt) || qt.startsWith(nt))).length / _nTok.length
+      : 1;
+    if (!best.exact && _coverage < 0.8) {
+      // Query trop générique → ne pas matcher directement, laisser passer aux candidats
+      // Le produit personnel sera injecté en tête de sélection via _userCands
+    } else {
     const candidates = userMatches.slice(0, 6).map(m => ({
       name:      m.entry.label,
       nameDE:    m.entry.labelDE || null,
@@ -4330,6 +4343,7 @@ function getFoodDataSync(name) {
       apiProductName: entry.label,
       displayName:    entry.labelDE || entry.label,
     };
+    } // fin else coverage >= 0.8
   }
 
   // ── Priorité 2 : LOCAL_FOOD_DB ──
@@ -6857,6 +6871,57 @@ function scanCancel() {
   focusQuickInput();
   setTimeout(focusQuickInput, 0);
   setTimeout(focusQuickInput, 80);
+}
+
+function scanManualEntry() {
+  const sp = _scanParsed;
+  if (!sp) return;
+  // Construire _pendingItem depuis _scanParsed pour que addFoodManually() l'utilise
+  const name = sp._rawName || sp.name || (document.getElementById("quick-input") || {}).value || "";
+  const kgVal = sp.qty && sp.unit
+    ? (sp.unit === "kg"  ? sp.qty
+      : sp.unit === "mg" ? sp.qty / 1e6
+      : sp.unit === "L"  ? sp.qty
+      : sp.unit === "ml" ? sp.qty / 1000
+      : sp.unit === "cl" ? sp.qty / 100
+      : sp.qty / 1000) // g par défaut
+    : 0;
+  _pendingItem = {
+    name:        name,
+    rawName:     name,
+    displayName: name,
+    qty:         sp.qty  || 0,
+    unit:        sp.unit || "g",
+    kg:          kgVal,
+    expiry:      sp.expiry || null,
+    useFrom:     null,
+  };
+  // Masquer l'aperçu scan
+  const p = document.getElementById("scan-preview");
+  if (p) p.style.display = "none";
+  // Ouvrir directement le panneau nutrition manuelle
+  addFoodManually();
+}
+
+function scanChooseFromBase() {
+  const sp = _scanParsed;
+  const rawQ = (sp && (sp._rawName || sp.name)) ||
+               (document.getElementById("quick-input") || {}).value || "";
+  // Stocker le contexte scan pour le bouton "Ajouter à l'inventaire"
+  _scanBaseContext = sp ? {
+    rawName: sp._rawName || sp.name || rawQ,
+    qty:     sp.qty   || 0,
+    unit:    sp.unit  || "g",
+    expiry:  sp.expiry || null,
+  } : null;
+  if (typeof openBaseModal === "function") {
+    openBaseModal();
+    const searchEl = document.getElementById("base-search");
+    if (searchEl && rawQ) {
+      searchEl.value = rawQ;
+      searchEl.dispatchEvent(new Event("input"));
+    }
+  }
 }
 
 /** Retourne des clés DB forcées pour les cas ambigus courants, ou null si pas de règle. */
@@ -11669,6 +11734,30 @@ function openBaseModal() {
       else if (action === "edit")     { _editUserFood(key); }
       else if (action === "delete")   { _deleteUserFood(key); }
       else if (action === "override") { _createUserOverride(key); }
+      else if (action === "scan-add" && _scanBaseContext) {
+        const ctx = _scanBaseContext;
+        const kcal10  = parseInt(detail.dataset.kcal10,  10) || 0;
+        const prot10  = parseInt(detail.dataset.prot10,  10) || 0;
+        const carbs10 = parseInt(detail.dataset.carbs10, 10) || 0;
+        const fat10   = parseInt(detail.dataset.fat10,   10) || 0;
+        const lbl     = detail.dataset.label || ctx.rawName || "";
+        const kgVal   = ctx.unit === "kg" ? ctx.qty : ctx.unit === "L" ? ctx.qty
+                      : ctx.unit === "ml" ? ctx.qty/1000 : ctx.unit === "cl" ? ctx.qty/100 : ctx.qty/1000;
+        const result = {
+          data: { kcal: kcal10, protein: prot10, carbs: carbs10, fat: fat10 },
+          dataSource: "base_scan", matchScore: 100, matchType: "exact",
+          matchLabel: "Lebensmittelbasis", source: source === "user" ? "userFoodDB" : "local",
+          candidates: [], displayName: lbl, apiProductName: null,
+        };
+        _pendingItem = {
+          name: lbl, rawName: lbl, displayName: lbl,
+          qty: ctx.qty, unit: ctx.unit, kg: kgVal,
+          expiry: ctx.expiry || null, useFrom: null,
+        };
+        closeBaseDetail(); closeBaseModal();
+        _scanBaseContext = null;
+        commitFoodItem(_pendingItem, result);
+      }
     });
   }
 }
@@ -11786,18 +11875,26 @@ function _openBaseDetail(key, source) {
   document.getElementById("bd-fat").textContent    = fat;
 
   const actions = document.getElementById("bd-actions");
+  const scanBtnDE = _scanBaseContext
+    ? `<button class="bd-btn bd-btn-primary" data-action="scan-add" style="background:var(--green);color:#fff">✓ Zum Inventar hinzufügen</button>`
+    : "";
   if (source === "user") {
-    actions.innerHTML = `
+    actions.innerHTML = `${scanBtnDE}
       <button class="bd-btn bd-btn-primary"   data-action="edit">✏️ Bearbeiten</button>
       <button class="bd-btn bd-btn-danger"    data-action="delete">Löschen</button>
       <button class="bd-btn bd-btn-secondary" data-action="close">Schließen</button>`;
   } else {
-    actions.innerHTML = `
+    actions.innerHTML = `${scanBtnDE}
       <button class="bd-btn bd-btn-primary"   data-action="override">Eigene Version erstellen</button>
       <button class="bd-btn bd-btn-secondary" data-action="close">Schließen</button>`;
   }
 
   const detail = document.getElementById("base-detail");
+  detail.dataset.kcal10  = Math.round(kcal * 10);
+  detail.dataset.prot10  = Math.round(prot * 10);
+  detail.dataset.carbs10 = Math.round(carbs * 10);
+  detail.dataset.fat10   = Math.round(fat * 10);
+  detail.dataset.label   = label;
   detail.dataset.key    = key;
   detail.dataset.source = source;
   document.getElementById("base-detail-overlay").classList.add("open");

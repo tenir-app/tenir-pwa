@@ -1013,6 +1013,8 @@
           </div>
           <div class="scan-preview-actions">
             <button class="btn btn-scan-confirm" id="scan-confirm-btn" onclick="scanConfirm()">✓ Confirmer et continuer</button>
+            <button class="btn" style="background:var(--surface2)" onclick="scanManualEntry()">✏ Saisie manuelle</button>
+            <button class="btn" style="background:var(--surface2)" onclick="scanChooseFromBase()">📖 Base alimentaire</button>
             <button class="btn btn-scan-cancel" onclick="scanCancel()">Recommencer</button>
           </div>
         </div>
@@ -3787,23 +3789,35 @@ function getFoodDataSync(name) {
   const userMatches = _searchUserFoodDB(searchQuery);
   if (userMatches.length > 0 && (userMatches[0].exact || userMatches[0].score >= 85)) {
     const um = userMatches[0];
-    return {
-      data: {
-        kcal:    um.entry.nutrition.kcal,
-        protein: um.entry.nutrition.protein,
-        carbs:   um.entry.nutrition.carbs,
-        fat:     um.entry.nutrition.fat,
-        openedLife: null, openedLifeCold: null, openedLifeNoCold: null,
-      },
-      dataSource:  "user_exact",
-      matchScore:  100,
-      matchType:   "exact",
-      matchLabel:  "personnel",
-      source:      "userFoodDB",
-      candidates:  [],
-      apiProductName: null,
-      displayName: um.entry.label,
-    };
+    // Garde anti-générique : commit direct seulement si la query est aussi spécifique que le nom personnel
+    // Ex: "pates" ne doit pas matcher directement "Pates Bio Lidl" — ouvrir une sélection à la place
+    const _normQ = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g," ").replace(/\s+/g," ").trim();
+    const qTokens = _normQ(searchQuery).split(" ").filter(t => t.length > 1);
+    const nTokens = _normQ(um.entry.label).split(" ").filter(t => t.length > 1);
+    // Tolérer le commit direct seulement si la query couvre ≥80% des tokens du nom personnel
+    const coverage = nTokens.length > 0
+      ? qTokens.filter(qt => nTokens.some(nt => nt === qt || nt.startsWith(qt) || qt.startsWith(nt))).length / nTokens.length
+      : 1;
+    if (um.exact || coverage >= 0.8) {
+      return {
+        data: {
+          kcal:    um.entry.nutrition.kcal,
+          protein: um.entry.nutrition.protein,
+          carbs:   um.entry.nutrition.carbs,
+          fat:     um.entry.nutrition.fat,
+          openedLife: null, openedLifeCold: null, openedLifeNoCold: null,
+        },
+        dataSource:  "user_exact",
+        matchScore:  100,
+        matchType:   "exact",
+        matchLabel:  "personnel",
+        source:      "userFoodDB",
+        candidates:  [],
+        apiProductName: null,
+        displayName: um.entry.label,
+      };
+    }
+    // Sinon : query trop générique → laisser passer aux candidats (userFoodDB sera en tête via injection)
   }
 
   const matches = _searchLocalDB(searchQuery);
@@ -6433,6 +6447,57 @@ function scanCancel() {
   focusQuickInput();
   setTimeout(focusQuickInput, 0);
   setTimeout(focusQuickInput, 80);
+}
+
+function scanManualEntry() {
+  const sp = _scanParsed;
+  if (!sp) return;
+  // Construire _pendingItem depuis _scanParsed pour que addFoodManually() l'utilise
+  const name = sp._rawName || sp.name || (document.getElementById("quick-input") || {}).value || "";
+  const kgVal = sp.qty && sp.unit
+    ? (sp.unit === "kg"  ? sp.qty
+      : sp.unit === "mg" ? sp.qty / 1e6
+      : sp.unit === "L"  ? sp.qty
+      : sp.unit === "ml" ? sp.qty / 1000
+      : sp.unit === "cl" ? sp.qty / 100
+      : sp.qty / 1000) // g par défaut
+    : 0;
+  _pendingItem = {
+    name:        name,
+    rawName:     name,
+    displayName: name,
+    qty:         sp.qty  || 0,
+    unit:        sp.unit || "g",
+    kg:          kgVal,
+    expiry:      sp.expiry || null,
+    useFrom:     null,
+  };
+  // Masquer l'aperçu scan
+  const p = document.getElementById("scan-preview");
+  if (p) p.style.display = "none";
+  // Ouvrir directement le panneau nutrition manuelle
+  addFoodManually();
+}
+
+function scanChooseFromBase() {
+  const sp = _scanParsed;
+  const rawQ = (sp && (sp._rawName || sp.name)) ||
+               (document.getElementById("quick-input") || {}).value || "";
+  // Stocker le contexte scan pour le bouton "Ajouter à l'inventaire"
+  _scanBaseContext = sp ? {
+    rawName: sp._rawName || sp.name || rawQ,
+    qty:     sp.qty   || 0,
+    unit:    sp.unit  || "g",
+    expiry:  sp.expiry || null,
+  } : null;
+  if (typeof openBaseModal === "function") {
+    openBaseModal();
+    const searchEl = document.getElementById("base-search");
+    if (searchEl && rawQ) {
+      searchEl.value = rawQ;
+      searchEl.dispatchEvent(new Event("input"));
+    }
+  }
 }
 
 /** Retourne des clés DB forcées pour les cas ambigus courants (FR), ou null. */
@@ -11165,6 +11230,35 @@ function openBaseModal() {
       else if (action === "edit")     { _editUserFood(key); }
       else if (action === "delete")   { _deleteUserFood(key); }
       else if (action === "override") { _createUserOverride(key); }
+      else if (action === "scan-add" && _scanBaseContext) {
+        // Ajouter à l'inventaire avec les macros du produit et le contexte scan
+        const ctx = _scanBaseContext;
+        const kcal10  = parseInt(detail.dataset.kcal10,  10) || 0;
+        const prot10  = parseInt(detail.dataset.prot10,  10) || 0;
+        const carbs10 = parseInt(detail.dataset.carbs10, 10) || 0;
+        const fat10   = parseInt(detail.dataset.fat10,   10) || 0;
+        const lbl     = detail.dataset.label || ctx.rawName || "";
+        const kgVal   = ctx.unit === "kg"  ? ctx.qty
+                      : ctx.unit === "L"   ? ctx.qty
+                      : ctx.unit === "ml"  ? ctx.qty / 1000
+                      : ctx.unit === "cl"  ? ctx.qty / 100
+                      : ctx.qty / 1000; // g par défaut
+        const result = {
+          data: { kcal: kcal10, protein: prot10, carbs: carbs10, fat: fat10 },
+          dataSource: "base_scan", matchScore: 100, matchType: "exact",
+          matchLabel: "base", source: detail.dataset.source === "user" ? "userFoodDB" : "local",
+          candidates: [], displayName: lbl, apiProductName: null,
+        };
+        _pendingItem = {
+          name: lbl, rawName: lbl, displayName: lbl,
+          qty: ctx.qty, unit: ctx.unit, kg: kgVal,
+          expiry: ctx.expiry || null, useFrom: null,
+        };
+        closeBaseDetail();
+        closeBaseModal();
+        _scanBaseContext = null;
+        commitFoodItem(_pendingItem, result);
+      }
     });
   }
 }
@@ -11302,16 +11396,26 @@ function _openBaseDetail(key, source) {
 
   // Actions — data-action pour éviter onclick avec guillemets (Safari iOS)
   const actions = document.getElementById("bd-actions");
+  const scanBtn = _scanBaseContext
+    ? `<button class="bd-btn bd-btn-primary" data-action="scan-add" style="background:var(--green);color:#fff">✓ Ajouter à l'inventaire</button>`
+    : "";
   if (source === "user") {
-    actions.innerHTML = `
+    actions.innerHTML = `${scanBtn}
       <button class="bd-btn bd-btn-primary"   data-action="edit">✏️ Modifier</button>
       <button class="bd-btn bd-btn-danger"    data-action="delete">Supprimer</button>
       <button class="bd-btn bd-btn-secondary" data-action="close">Fermer</button>`;
   } else {
-    actions.innerHTML = `
+    actions.innerHTML = `${scanBtn}
       <button class="bd-btn bd-btn-primary"   data-action="override">Créer ma version</button>
       <button class="bd-btn bd-btn-secondary" data-action="close">Fermer</button>`;
   }
+
+  // Stocker les macros ×10 pour le listener scan-add
+  document.getElementById("base-detail").dataset.kcal10  = Math.round(kcal * 10);
+  document.getElementById("base-detail").dataset.prot10  = Math.round(prot * 10);
+  document.getElementById("base-detail").dataset.carbs10 = Math.round(carbs * 10);
+  document.getElementById("base-detail").dataset.fat10   = Math.round(fat * 10);
+  document.getElementById("base-detail").dataset.label   = label;
 
   // Stocker pour le listener délégué
   const detail = document.getElementById("base-detail");
