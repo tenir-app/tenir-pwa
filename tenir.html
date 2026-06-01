@@ -6483,15 +6483,15 @@ function scanChooseFromBase() {
   const sp = _scanParsed;
   const rawQ = (sp && (sp._rawName || sp.name)) ||
                (document.getElementById("quick-input") || {}).value || "";
-  // Stocker le contexte scan pour le bouton "Ajouter à l'inventaire"
-  _scanBaseContext = sp ? {
-    rawName: sp._rawName || sp.name || rawQ,
-    qty:     sp.qty   || 0,
-    unit:    sp.unit  || "g",
-    expiry:  sp.expiry || null,
-  } : null;
   if (typeof openBaseModal === "function") {
-    openBaseModal();
+    openBaseModal(); // _scanBaseContext = null ici
+    // Reassigner APRÈS openBaseModal pour conserver le contexte scan
+    _scanBaseContext = sp ? {
+      rawName: sp._rawName || sp.name || rawQ,
+      qty:     sp.qty   || 0,
+      unit:    sp.unit  || "g",
+      expiry:  sp.expiry || null,
+    } : null;
     const searchEl = document.getElementById("base-search");
     if (searchEl && rawQ) {
       searchEl.value = rawQ;
@@ -11199,6 +11199,7 @@ function obInjectWeiter(panelId, step) {
 let _baseFilter = "all";  // "all" | "tenir" | "user"
 
 function openBaseModal() {
+  _scanBaseContext = null; // réinitialiser — sera réassigné par scanChooseFromBase() si besoin
   const overlay = document.getElementById("base-overlay");
   overlay.classList.add("open");
   document.getElementById("base-search").value = "";
