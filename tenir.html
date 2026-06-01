@@ -1391,12 +1391,12 @@
       <div class="form-hint">Estimation utilisée : 0,4 minute de cuisson par gramme de gaz.</div>
     </div>
 
-    <div class="sec-title">Ajouter du Brennspiritus</div>
+    <div class="sec-title">Ajouter de l'alcool à brûler</div>
     <div class="add-form">
       <div class="form-row">
         <div class="field f-name">
           <label>Nom</label>
-          <input type="text" id="cook-alcohol-name" placeholder="Brennspiritus"/>
+          <input type="text" id="cook-alcohol-name" placeholder="Alcool à brûler"/>
         </div>
         <div class="field" style="flex:0 0 72px">
           <label>Nombre</label>
@@ -1410,9 +1410,9 @@
           <label>Unité</label>
           <select id="cook-alcohol-unit"><option value="L">L</option><option value="ml">ml</option></select>
         </div>
-        <button class="btn" onclick="addAlcoholItem()">+ Ajouter alcool</button>
+        <button class="btn" onclick="addAlcoholItem()">+ Ajouter de l'alcool</button>
       </div>
-      <div class="form-hint">Estimation utilisée : 120 minutes de cuisson par litre de Brennspiritus.</div>
+      <div class="form-hint">Estimation utilisée : 120 minutes de cuisson par litre de Alcool à brûler.</div>
     </div>
 
     <div class="sec-title">Inventaire cuisson</div>
@@ -4514,7 +4514,7 @@ function addGasItem() {
 }
 
 function addAlcoholItem() {
-  const name       = document.getElementById("cook-alcohol-name").value.trim() || "Brennspiritus";
+  const name       = document.getElementById("cook-alcohol-name").value.trim() || "Alcool à brûler";
   const count      = parseInt(document.getElementById("cook-alcohol-count").value, 10);
   const unitAmount = parseFloat(document.getElementById("cook-alcohol-unit-amount").value);
   const unit       = document.getElementById("cook-alcohol-unit").value;
