@@ -6960,7 +6960,8 @@ async function scanConfirm() {
         : (getFoodDataSync(name)?.candidates || []);
     }
     // Eigene Produkte (userFoodDB) in Kandidatenliste priorisieren
-    const _userCands = _searchUserFoodDB(parsed.name || name)
+    const _userQuery = _scanParsed._rawName || _scanParsed.name || name;
+    const _userCands = _searchUserFoodDB(_userQuery)
       .filter(um => um.score >= 50)
       .slice(0, 3)
       .map(um => ({
