@@ -1835,7 +1835,7 @@ const LOCAL_FOOD_DB = {
   "lentilles_rouges_seches": {
     label: "Lentilles rouges / corail (sèches)", labelDE: "Rote Linsen (trocken)",
     aliases: ["lentilles rouges seches","lentilles rouges sec","red split lentils"],
-    category: "legumineuse", state: "ready", requiresCooking: false,
+    category: "legumineuse", state: "ready", requiresCooking: true,
     waterNeed: "high", energyNeed: "medium", generic: [],
     nutrition: { kcal:3350, protein:250, carbs:600, fat:10 },
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
@@ -1853,7 +1853,7 @@ const LOCAL_FOOD_DB = {
   "lentilles_vertes_seches": {
     label: "Lentilles vertes (sèches)",
     aliases: ["lentilles vertes seches","lentilles vertes sec","lentilles du puy","gruene linsen"],
-    category: "legumineuse", state: "ready", requiresCooking: false,
+    category: "legumineuse", state: "ready", requiresCooking: true,
     waterNeed: "high", energyNeed: "medium", generic: [],
     nutrition: { kcal:3100, protein:240, carbs:500, fat:10 },
   },
@@ -3732,7 +3732,23 @@ function _searchUserFoodDB(query) {
  * Ne rien faire si nom trop court, générique, ou macros invalides.
  * Retourne "created" | "updated" | "skipped".
  */
-function _upsertUserFoodDB(name, kcal100, protein100, carbs100, fat100, rawLabel) {
+// Applique des métadonnées fonctionnelles à une entrée userFoodDB existante
+function _applyUserFoodMeta(entry, meta) {
+  if (!meta || !entry) return;
+  if (meta.category)           entry.category           = meta.category;
+  if (meta.cooking !== undefined) {
+    entry.cooking = meta.cooking;
+    entry.requiresCooking = meta.cooking === "low" || meta.cooking === "medium" || meta.cooking === "high";
+  }
+  if (meta.waterCooking !== undefined) entry.waterCooking = meta.waterCooking || 0;
+  if (meta.openedLifeCold   !== undefined) entry.openedLifeCold   = meta.openedLifeCold   || null;
+  if (meta.openedLifeNoCold !== undefined) entry.openedLifeNoCold = meta.openedLifeNoCold || null;
+  entry.openedLife = entry.openedLifeCold || entry.openedLifeNoCold || meta.openedLife || null;
+  if (meta.isSupplementalFluid !== undefined) entry.isSupplementalFluid = !!meta.isSupplementalFluid;
+  entry.updatedAt = new Date().toISOString();
+}
+
+function _upsertUserFoodDB(name, kcal100, protein100, carbs100, fat100, rawLabel, meta) {
   // Rejeter noms trop courts ou génériques
   const GENERIC_NAMES = /^(barre|produit|aliment|food|item|autre|inconnu|test|truc|chose)$/i;
   const trimmed = (name || "").trim();
@@ -3751,9 +3767,9 @@ function _upsertUserFoodDB(name, kcal100, protein100, carbs100, fat100, rawLabel
   if (existing) {
     existing.nutrition = { kcal: kcal100 * 10, protein: protein100 * 10, carbs: carbs100 * 10, fat: fat100 * 10 };
     existing.updatedAt = new Date().toISOString();
-    // Mettre à jour le label si le nouveau est plus riche (accents présents)
     if (rawLabel && rawLabel.trim()) existing.label = rawLabel.trim();
     if (!existing.aliases.includes(alias)) existing.aliases.push(alias);
+    if (meta) _applyUserFoodMeta(existing, meta);
     return "updated";
   } else {
     const id = "user_" + normKey.replace(/ /g, "_").slice(0, 40) + "_" + Date.now().toString(36);
@@ -3762,9 +3778,15 @@ function _upsertUserFoodDB(name, kcal100, protein100, carbs100, fat100, rawLabel
       label:     displayLabel,
       aliases:   [alias],
       nutrition: { kcal: kcal100 * 10, protein: protein100 * 10, carbs: carbs100 * 10, fat: fat100 * 10 },
-      category:  "user",
+      category:  meta?.category || "user",
       source:    "user",
       generic:   [],
+      cooking:   meta?.cooking || null,
+      waterCooking: meta?.waterCooking || 0,
+      openedLifeCold:   meta?.openedLifeCold   || null,
+      openedLifeNoCold: meta?.openedLifeNoCold || null,
+      openedLife:       meta?.openedLifeCold || meta?.openedLifeNoCold || meta?.openedLife || null,
+      isSupplementalFluid: meta?.isSupplementalFluid || false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -3805,7 +3827,11 @@ function getFoodDataSync(name) {
           protein: um.entry.nutrition.protein,
           carbs:   um.entry.nutrition.carbs,
           fat:     um.entry.nutrition.fat,
-          openedLife: null, openedLifeCold: null, openedLifeNoCold: null,
+          openedLifeCold:     um.entry.openedLifeCold   || um.entry.openedLife || null,
+          openedLifeNoCold:   um.entry.openedLifeNoCold || um.entry.openedLife || null,
+          openedLife:         um.entry.openedLife || um.entry.openedLifeCold   || null,
+          isSupplementalFluid: um.entry.isSupplementalFluid || false,
+          category:            um.entry.category || "user",
         },
         dataSource:  "user_exact",
         matchScore:  100,
@@ -3847,6 +3873,11 @@ function getFoodDataSync(name) {
       protein: um.entry.nutrition.protein,
       carbs:   um.entry.nutrition.carbs,
       fat:     um.entry.nutrition.fat,
+      openedLife:         um.entry.openedLife     || null,
+      openedLifeCold:     um.entry.openedLifeCold || um.entry.openedLife || null,
+      openedLifeNoCold:   um.entry.openedLifeNoCold || um.entry.openedLife || null,
+      isSupplementalFluid: um.entry.isSupplementalFluid || false,
+      category:            um.entry.category || "user",
     },
   }));
   const candidates = [
@@ -4152,6 +4183,10 @@ function parseOpenedLifeDays(label) {
   const singleJour = s.match(/(\d+)\s*jour/);
   if (singleJour) return parseInt(singleJour[1], 10);
 
+  // Nombre seul sans unité → interprété en jours (ex: "4", "7")
+  const singleNum = s.match(/^\s*(\d+)\s*$/);
+  if (singleNum) return parseInt(singleNum[1], 10);
+
   return null; // durée non calculable → pas de deadline
 }
 
@@ -4316,10 +4351,32 @@ function computeCookingDemand() {
   const unknownItems = [];
   allItems.forEach(item => {
     const meta = getLocalFoodMetaForItem(item);
-    if (!meta || !meta.requiresCooking) return;
+    // Vérifier aussi userFoodDB pour les produits personnels
+    const userEntry = userFoodDB.find(e => {
+      const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+      return norm(e.label) === norm(item.name);
+    });
+    const userCooking = userEntry?.cooking || "";
+    const userWaterCooking = Number(userEntry?.waterCooking || 0);
+    // requiresCooking pour userFoodDB : cooking présent (non vide/aucune) OU waterCooking > 0
+    const userRequiresCooking = userEntry && (
+      userEntry.requiresCooking === true ||
+      (userCooking && userCooking !== "" && userCooking !== "none" && userCooking !== "aucune") ||
+      userWaterCooking > 0
+    );
+    const requiresCooking = (meta && meta.requiresCooking) || userRequiresCooking;
+    if (!requiresCooking) return;
     const kg      = item.kg   || 0;
     const kcal    = item.kcal || 0;
-    const profile = getCookingProfileForItem(item);
+    // Profil cuisson : COOKING_PROFILES (par nom) ou métadonnées userFoodDB
+    let profile = getCookingProfileForItem(item);
+    if (profile.isDefault && userEntry && (userWaterCooking > 0 || userCooking)) {
+      // cookMap accepte les valeurs FR et EN
+      // cookMap : valeurs en min/kg (cohérent avec COOKING_PROFILES)
+      const cookMap = { low:15, medium:25, high:60, faible:15, moyenne:25, "élevée":60, elevee:60, wenig:15, mittel:25, viel:60 };
+      const minutesPerKg = cookMap[userCooking] || 25;
+      profile = { minutesPerKg: minutesPerKg, waterPerKg: userWaterCooking / 100, isDefault: false };
+    }
     totalMinutesNeeded   += kg * profile.minutesPerKg;
     totalWaterNeeded     += kg * profile.waterPerKg;
     cookingDependentKcal += kcal;
@@ -6624,6 +6681,11 @@ async function scanConfirm() {
           protein: um.entry.nutrition?.protein || 0,
           carbs:   um.entry.nutrition?.carbs   || 0,
           fat:     um.entry.nutrition?.fat     || 0,
+          openedLifeCold:     um.entry.openedLifeCold   || um.entry.openedLife || null,
+          openedLifeNoCold:   um.entry.openedLifeNoCold || um.entry.openedLife || null,
+          openedLife:         um.entry.openedLife || um.entry.openedLifeCold   || null,
+          isSupplementalFluid: um.entry.isSupplementalFluid || false,
+          category:            um.entry.category || "user",
         },
       }));
     if (_userCands.length > 0) {
@@ -7611,8 +7673,75 @@ function showManualEntryPrompt(name, kg, expiry, useFrom) {
       <div class="field f-small"><label>Lipides g/100g</label><input type="number" id="m-fat" min="0" step="0.1" style="width:80px"/></div>
       <button class="btn" style="align-self:flex-end" onclick="commitManualEntry()">Valider</button>
     </div>
+    <details style="margin-top:10px" id="m-advanced">
+      <summary style="font-size:12px;color:var(--text3);cursor:pointer;user-select:none">Options avancées</summary>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin-top:8px">
+        <div class="field f-small"><label>Catégorie</label>
+          <select id="m-category" style="font-size:12px">
+            <option value="user">— autre —</option>
+            <option value="cereale">Céréales</option>
+            <option value="legumineuse">Légumineuses</option>
+            <option value="conserve">Conserves</option>
+            <option value="laitage">Laitiers</option>
+            <option value="boisson">Boissons</option>
+            <option value="huile">Huiles</option>
+            <option value="condiment">Condiments</option>
+            <option value="snack">Sucrés / snacks</option>
+            <option value="fruit">Fruits</option>
+            <option value="legume">Légumes</option>
+            <option value="supplement">Suppléments</option>
+          </select></div>
+        <div class="field f-small"><label>Cuisson</label>
+          <select id="m-cooking" style="font-size:12px">
+            <option value="">aucune</option>
+            <option value="low">faible</option>
+            <option value="medium">moyenne</option>
+            <option value="high">élevée</option>
+          </select></div>
+        <div class="field f-small"><label>Eau cuisson (ml/100g)</label>
+          <input type="number" id="m-water-cooking" min="0" step="10" value="0" style="width:80px"/></div>
+        <div class="field f-small"><label>Avec frigo (avec élec.)</label>
+          <input type="text" id="m-opened-life-cold" placeholder="ex: 3–5 jours" style="width:120px"/></div>
+        <div class="field f-small"><label>Sans frigo (sans élec.)</label>
+          <input type="text" id="m-opened-life-nocold" placeholder="ex: 1 jour" style="width:120px"/></div>
+        <div class="field f-small" style="grid-column:1/-1">
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400">
+            <input type="checkbox" id="m-is-fluid"/>
+            Liquide complémentaire (jus, lait, cola, bière…)
+          </label></div>
+      </div>
+    </details>
+    </div>
   `;
   panel.classList.add("visible");
+}
+
+
+function _readAdvancedMeta() {
+  return {
+    category:           (document.getElementById("m-category")?.value || "user"),
+    cooking:            (document.getElementById("m-cooking")?.value || "") || null,
+    waterCooking:       parseFloat(document.getElementById("m-water-cooking")?.value) || 0,
+    openedLifeCold:   (document.getElementById("m-opened-life-cold")?.value || "").trim() || null,
+    openedLifeNoCold: (document.getElementById("m-opened-life-nocold")?.value || "").trim() || null,
+    openedLife: (document.getElementById("m-opened-life-cold")?.value || document.getElementById("m-opened-life-nocold")?.value || "").trim() || null,
+    isSupplementalFluid: !!(document.getElementById("m-is-fluid")?.checked),
+  };
+}
+function _fillAdvancedMeta(entry) {
+  if (!entry) return;
+  const cat = document.getElementById("m-category");
+  const cook = document.getElementById("m-cooking");
+  const wc = document.getElementById("m-water-cooking");
+  const fl = document.getElementById("m-is-fluid");
+  if (cat && entry.category)           cat.value   = entry.category;
+  if (cook && entry.cooking)           cook.value  = entry.cooking;
+  if (wc && entry.waterCooking)        wc.value    = entry.waterCooking;
+  const olc  = document.getElementById("m-opened-life-cold");
+  const olnc = document.getElementById("m-opened-life-nocold");
+  if (olc  && (entry.openedLifeCold   || entry.openedLife)) olc.value  = entry.openedLifeCold   || entry.openedLife || "";
+  if (olnc && (entry.openedLifeNoCold || entry.openedLife)) olnc.value = entry.openedLifeNoCold || entry.openedLife || "";
+  if (fl && entry.isSupplementalFluid) fl.checked  = true;
 }
 
 function commitManualEntry() {
@@ -7632,15 +7761,30 @@ function commitManualEntry() {
 
 
   // Mémoriser dans userFoodDB AVANT commitFoodItem() pour garantir la disponibilité immédiate.
+  const _advMeta = _readAdvancedMeta();
   const _uResult = _upsertUserFoodDB(_userFoodName, kcal100, prot100, carbs100, fat100,
-    _pendingSnapshot.rawName || null);
+    _pendingSnapshot.rawName || null, _advMeta);
 
   // rawLabel = texte brut original (avec accents/apostrophes) si disponible
   const _rawLabel = _pendingSnapshot.rawName || null;
 
 
+  // Récupérer l'entrée fraîchement sauvegardée pour propager les métadonnées avancées
+  const _savedEntry = userFoodDB.find(e => {
+    const _nk = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+    return _nk(e.label) === _nk(_userFoodName);
+  });
   const manualResult = {
-    data:          { kcal:kcal100*10, protein:prot100*10, carbs:carbs100*10, fat:fat100*10 },
+    data: {
+      kcal:    kcal100*10, protein: prot100*10, carbs: carbs100*10, fat: fat100*10,
+      openedLifeCold:     _savedEntry?.openedLifeCold   || _advMeta?.openedLifeCold   || _savedEntry?.openedLife || null,
+      openedLifeNoCold:   _savedEntry?.openedLifeNoCold || _advMeta?.openedLifeNoCold || _savedEntry?.openedLife || null,
+      openedLife:         _savedEntry?.openedLife || _savedEntry?.openedLifeCold || _savedEntry?.openedLifeNoCold || null,
+      isSupplementalFluid: _savedEntry?.isSupplementalFluid ?? _advMeta?.isSupplementalFluid ?? false,
+      category:            _savedEntry?.category   || _advMeta?.category   || "user",
+      cooking:             _savedEntry?.cooking    || _advMeta?.cooking    || null,
+      waterCooking:        _savedEntry?.waterCooking ?? _advMeta?.waterCooking ?? 0,
+    },
     dataSource:    "manual",
     matchScore:    100,
     matchType:     "exact",
@@ -8036,6 +8180,11 @@ function _getComplementaryLiquidItems() {
   const items = [];
   all.forEach(item => {
     if (!(item.kg > 0)) return;
+    // isSupplementalFluid flag sur produits personnels
+    if (item.isSupplementalFluid) {
+      items.push({ name: item.name, liters: item.kg, location: item.location || "" });
+      return;
+    }
     const n = norm(item.name || "");
     // Blacklist — exclure immédiatement
     if (BLACKLIST.some(b => n.includes(b))) return;
@@ -11432,12 +11581,11 @@ function closeBaseDetail() {
 /* ── Éditeur macros Base alimentaire — NE TOUCHE PAS à l'inventaire ── */
 let _baseFoodEditorLabel = null; // label du produit en cours d'édition
 
-function showBaseFoodEditor(label, kcal100, prot100, carbs100, fat100) {
+function showBaseFoodEditor(label, kcal100, prot100, carbs100, fat100, entry) {
   _baseFoodEditorLabel = label;
   closeBaseDetail();
   closeBaseModal();
 
-  // Réutiliser le panneau candidats existant (déjà présent dans le DOM)
   const panel = document.getElementById("candidate-panel");
   const list  = document.getElementById("candidate-list");
   if (!panel || !list) return;
@@ -11457,6 +11605,44 @@ function showBaseFoodEditor(label, kcal100, prot100, carbs100, fat100) {
       <div class="field f-small"><label>Lipides</label>   <input type="number" id="m-fat"     min="0" step="0.1" value="${fat100}"   style="width:80px"/></div>
       <button class="btn" style="align-self:flex-end" onclick="commitBaseFoodEditor()">Sauvegarder</button>
     </div>
+    <details style="margin-top:10px" id="m-advanced">
+      <summary style="font-size:12px;color:var(--text3);cursor:pointer;user-select:none">Options avancées</summary>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin-top:8px">
+        <div class="field f-small"><label>Catégorie</label>
+          <select id="m-category" style="font-size:12px">
+            <option value="user">— autre —</option>
+            <option value="cereale">Céréales</option>
+            <option value="legumineuse">Légumineuses</option>
+            <option value="conserve">Conserves</option>
+            <option value="laitage">Laitiers</option>
+            <option value="boisson">Boissons</option>
+            <option value="huile">Huiles</option>
+            <option value="condiment">Condiments</option>
+            <option value="snack">Sucrés / snacks</option>
+            <option value="fruit">Fruits</option>
+            <option value="legume">Légumes</option>
+            <option value="supplement">Suppléments</option>
+          </select></div>
+        <div class="field f-small"><label>Cuisson</label>
+          <select id="m-cooking" style="font-size:12px">
+            <option value="">aucune</option>
+            <option value="low">faible</option>
+            <option value="medium">moyenne</option>
+            <option value="high">élevée</option>
+          </select></div>
+        <div class="field f-small"><label>Eau cuisson (ml/100g)</label>
+          <input type="number" id="m-water-cooking" min="0" step="10" value="0" style="width:80px"/></div>
+        <div class="field f-small"><label>Avec frigo (avec élec.)</label>
+          <input type="text" id="m-opened-life-cold" placeholder="ex: 3–5 jours" style="width:120px"/></div>
+        <div class="field f-small"><label>Sans frigo (sans élec.)</label>
+          <input type="text" id="m-opened-life-nocold" placeholder="ex: 1 jour" style="width:120px"/></div>
+        <div class="field f-small" style="grid-column:1/-1">
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400">
+            <input type="checkbox" id="m-is-fluid"/>
+            Liquide complémentaire (jus, lait, cola, bière…)
+          </label></div>
+      </div>
+    </details>
     <div style="margin-top:8px">
       <button class="btn" style="background:var(--surface2);color:var(--text2);font-size:12px"
         onclick="document.getElementById('candidate-panel').classList.remove('visible');_baseFoodEditorLabel=null">
@@ -11465,8 +11651,7 @@ function showBaseFoodEditor(label, kcal100, prot100, carbs100, fat100) {
     </div>
   `;
   panel.classList.add("visible");
-
-  // Scroll vers le formulaire
+  if (entry) setTimeout(() => _fillAdvancedMeta(entry), 0);
   setTimeout(() => panel.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
 }
 
@@ -11483,7 +11668,8 @@ function commitBaseFoodEditor() {
   }
 
   // Upsert userFoodDB uniquement — PAS d'ajout inventaire
-  const result = _upsertUserFoodDB(_baseFoodEditorLabel, kcal100, prot100, carbs100, fat100);
+  const _advMetaBase = _readAdvancedMeta();
+  const result = _upsertUserFoodDB(_baseFoodEditorLabel, kcal100, prot100, carbs100, fat100, null, _advMetaBase);
   saveAppData();
 
   document.getElementById("candidate-panel")?.classList.remove("visible");
@@ -11503,7 +11689,8 @@ function _editUserFood(id) {
     +(entry.nutrition.kcal    / 10).toFixed(1),
     +(entry.nutrition.protein / 10).toFixed(1),
     +(entry.nutrition.carbs   / 10).toFixed(1),
-    +(entry.nutrition.fat     / 10).toFixed(1)
+    +(entry.nutrition.fat     / 10).toFixed(1),
+    entry
   );
 }
 
