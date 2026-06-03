@@ -498,6 +498,11 @@
     .vtest-bar { margin-top:1.25rem; display:none; } /* masqué en version publique */
     body.debug-tests .vtest-bar { display:block; }
     body.debug-tests #vtest-panel { display:block !important; }
+    .adv-checkbox-row { grid-column:1 / -1; width:100%; display:flex;
+      align-items:flex-start; gap:8px; min-width:0; max-width:100%; }
+    .adv-checkbox-row input[type="checkbox"] { flex:0 0 auto; margin-top:2px; }
+    .adv-checkbox-label { display:block; min-width:0; max-width:100%; font-weight:400;
+      white-space:normal; overflow-wrap:normal; word-break:normal; line-height:1.35; }
     .debug-only { display:none !important; }
     body.debug-mode .debug-only { display:inline-block !important; }
     #toggle-parser-tests-btn { margin-top:1.5rem; font-size:11px; opacity:.5; background:none; border:0.5px dashed var(--border2); color:var(--text3); padding:4px 10px; border-radius:4px; cursor:pointer; }
@@ -8182,8 +8187,8 @@ function showManualEntryPrompt(name, kg, expiry, useFrom) {
           <input type="text" id="m-opened-life-cold" placeholder="z.B. 3–5 Tage" style="width:120px"/></div>
         <div class="field f-small"><label>Nach Öffnen ohne Kühlschrank</label>
           <input type="text" id="m-opened-life-nocold" placeholder="z.B. 1 Tag" style="width:120px"/></div>
-        <div class="field f-small" style="grid-column:1/-1">
-          <label style="display:flex;align-items:center;gap:6px;font-weight:400">
+        <div class="adv-checkbox-row">
+          <label class="adv-checkbox-label">
             <input type="checkbox" id="m-is-fluid"/>
             Ergänzende Flüssigkeit (Saft, Milch, Cola, Bier…)
           </label></div>
@@ -12149,8 +12154,8 @@ function showBaseFoodEditor(label, kcal100, prot100, carbs100, fat100, entry) {
           <input type="text" id="m-opened-life-cold" placeholder="z.B. 3–5 Tage" style="width:120px"/></div>
         <div class="field f-small"><label>Nach Öffnen ohne Kühlschrank</label>
           <input type="text" id="m-opened-life-nocold" placeholder="z.B. 1 Tag" style="width:120px"/></div>
-        <div class="field f-small" style="grid-column:1/-1">
-          <label style="display:flex;align-items:center;gap:6px;font-weight:400">
+        <div class="adv-checkbox-row">
+          <label class="adv-checkbox-label">
             <input type="checkbox" id="m-is-fluid"/>
             Ergänzende Flüssigkeit (Saft, Milch, Cola, Bier…)
           </label></div>
