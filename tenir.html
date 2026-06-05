@@ -5364,7 +5364,7 @@ function renderFoodUnitDetailRows(item) {
         <td><span class="unit-qty-editable" onclick="editUnitQuantity(${item.id},${idx},this)">${unitQty}</span></td>
         <td>${item.expiry || "—"}</td>
         <td>${item.useFrom || "—"}</td>
-        <td>${item.location || "—"}</td>
+        <td style="cursor:pointer;color:var(--text3)" onclick="editUnitLocation(${item.id},${idx},this)" title="Localisation — cliquer pour modifier">${getUnitLocation(item, u) || "—"}</td>
         <td style="font-size:10px">${openedText}</td>
         <td style="color:var(--text3);font-size:11px">${afterOpen}</td>
         <td>${badge}</td>
@@ -5539,7 +5539,7 @@ function renderTable() {
           ? `<td class="editable" style="color:var(--text2)" onclick="editCell(this,${r.id},'useFrom')">${r.useFrom||"—"}</td>`
           : `<td style="color:var(--text2)">${r.useFrom||"—"}</td>`;
         const locCell  = r.manual
-          ? `<td class="editable" style="color:var(--text3);font-size:12px" onclick="editCell(this,${r.id},'location')">${r.location||"—"}</td>`
+          ? `<td class="editable" style="color:var(--text3);font-size:12px" onclick="editCell(this,${r.id},'location')">${getItemLocationLabel(r)||"—"}</td>`
           : `<td style="color:var(--text3);font-size:12px">${r.location||"—"}</td>`;
         // Colonne "Ouvert"
         let ouvertCell;
@@ -7607,6 +7607,7 @@ function commitFoodItem(pending, result) {
   clearCandidatePanel();
   renderManualList();
   renderTable();
+  storeFoodItemBaseNutrition(newItem);
   saveAppData();
   localStorage.setItem("tenir_first_food_entry_fr_done", "1");
   _ffuDisable();
@@ -7824,6 +7825,63 @@ function addFoodManually() {
   );
 }
 
+
+/**
+ * Recalcule item.kcal/protein/carbs/fat depuis la quantité réelle item.kg.
+ * Sources de macros (par ordre de priorité) :
+ *  1. item.baseNutrition  (stocké au commit)
+ *  2. getFoodDataSync(item.name)
+ *  3. Inférence depuis l'ancien kg / anciennes macros (fallback)
+ */
+function recomputeFoodItemTotals(item) {
+  if (!item || item.kcal === null || item.kcal === undefined) return;
+  const newKg = item.kg || 0;
+  if (newKg <= 0) { item.kcal = 0; item.protein = 0; item.carbs = 0; item.fat = 0; return; }
+
+  // Source 1 : baseNutrition stockée (kcal/kg, notation ×10 intégrée)
+  let nutPerKg = item.baseNutrition || null;
+
+  // Source 2 : getFoodDataSync par nom
+  if (!nutPerKg && item.name) {
+    const r = getFoodDataSync(item.name);
+    if (r && r.data && r.data.kcal) {
+      nutPerKg = { kcal: r.data.kcal, protein: r.data.protein || 0, carbs: r.data.carbs || 0, fat: r.data.fat || 0 };
+    }
+  }
+
+  // Source 3 : inférer depuis l'ancien kg et les anciennes macros
+  if (!nutPerKg && item._prevKg && item._prevKg > 0 && item.kcal > 0) {
+    nutPerKg = {
+      kcal:    item.kcal    / item._prevKg,
+      protein: (item.protein || 0) / item._prevKg,
+      carbs:   (item.carbs   || 0) / item._prevKg,
+      fat:     (item.fat     || 0) / item._prevKg,
+    };
+  }
+
+  if (!nutPerKg) return; // Pas de source fiable — ne pas modifier
+
+  item.kcal    = Math.round(nutPerKg.kcal    * newKg);
+  item.protein = Math.round(nutPerKg.protein * newKg);
+  item.carbs   = Math.round(nutPerKg.carbs   * newKg);
+  item.fat     = Math.round(nutPerKg.fat     * newKg);
+}
+
+/**
+ * Stocke les macros par kg dans item.baseNutrition juste après le commit initial.
+ * Appelé une seule fois à la création de l'item.
+ */
+function storeFoodItemBaseNutrition(item) {
+  if (!item || !item.kcal || !item.kg || item.kg <= 0) return;
+  if (item.baseNutrition) return; // déjà stocké
+  item.baseNutrition = {
+    kcal:    item.kcal    / item.kg,
+    protein: (item.protein || 0) / item.kg,
+    carbs:   (item.carbs   || 0) / item.kg,
+    fat:     (item.fat     || 0) / item.kg,
+  };
+}
+
 function deleteUnitFromItem(itemId, unitIdx) {
   if (!confirm("Supprimer cette unité ?")) return;
   const item = manualFoods.find(f => f.id === itemId);
@@ -7839,12 +7897,8 @@ function deleteUnitFromItem(itemId, unitIdx) {
     // Recalculer kg total et qty depuis les unités restantes
     item.kg  = item.units.reduce((s, u) => s + (u.kg || 0), 0);
     item.qty = formatQtyFromKgAndUnit(item.kg, item.unit || "g");
-    // Recalculer macros au prorata
-    const factor = item.units.length / (item.units.length + 1); // avant/après
-    if (item.kcal    !== null && item.kcal    !== undefined) item.kcal    = Math.round(item.kcal    * factor);
-    if (item.protein !== null && item.protein !== undefined) item.protein = Math.round(item.protein * factor);
-    if (item.carbs   !== null && item.carbs   !== undefined) item.carbs   = Math.round(item.carbs   * factor);
-    if (item.fat     !== null && item.fat     !== undefined) item.fat     = Math.round(item.fat     * factor);
+    // Recalculer macros depuis la quantité réelle restante
+    recomputeFoodItemTotals(item);
     // Synchroniser openedAt sur la première unité encore ouverte
     const firstOpen = item.units.find(u => u.openedAt);
     item.openedAt = firstOpen ? firstOpen.openedAt : null;
@@ -7856,6 +7910,52 @@ function deleteUnitFromItem(itemId, unitIdx) {
   renderManualList();
   renderTable();
   renderSummary();
+}
+
+
+/* ── Localisation par unité ── */
+function getUnitLocation(item, unit) {
+  return (unit && unit.location) ? unit.location : (item.location || "");
+}
+function getItemLocationLabel(item) {
+  if (!Array.isArray(item.units) || item.units.length === 0) return item.location || "";
+  const locs = item.units.map(u => (u.location || item.location || "").trim());
+  const unique = [...new Set(locs.filter(Boolean))];
+  if (unique.length === 0) return item.location || "";
+  if (unique.length === 1) return unique[0];
+  return "Plusieurs lieux";
+}
+function editUnitLocation(itemId, unitIdx, td) {
+  if (!td || td.querySelector("input")) return; // déjà en édition
+  const item = manualFoods.find(f => f.id === itemId);
+  if (!item || !Array.isArray(item.units) || !item.units[unitIdx]) return;
+  const unit = item.units[unitIdx];
+  const cur  = getUnitLocation(item, unit);
+
+  const inp = document.createElement("input");
+  inp.type  = "text";
+  inp.value = cur;
+  inp.style.cssText = "width:90px;font-size:11px;padding:1px 4px;border:1px solid var(--blue);border-radius:3px";
+  td.textContent = "";
+  td.appendChild(inp);
+  inp.focus(); inp.select();
+
+  const commit = () => {
+    const val = inp.value.trim();
+    unit.location = val;
+    // Si toutes les unités ont la même localisation effective → synchro item.location
+    const locs = item.units.map(u => (u.location || item.location || "").trim());
+    const unique = [...new Set(locs.filter(Boolean))];
+    if (unique.length === 1) item.location = unique[0];
+    saveAppData(); renderTable(); renderSummary();
+  };
+  const cancel = () => { renderTable(); };
+
+  inp.addEventListener("keydown", e => {
+    if (e.key === "Enter")  { e.preventDefault(); commit(); }
+    if (e.key === "Escape") { e.preventDefault(); cancel(); }
+  });
+  inp.addEventListener("blur", () => commit());
 }
 
 function editUnitQuantity(itemId, unitIdx, spanEl) {
@@ -7884,8 +7984,11 @@ function editUnitQuantity(itemId, unitIdx, spanEl) {
     const newKg = (unitStr === "kg") ? raw : (unitStr === "mg") ? raw/1e6 : (unitStr === "cl") ? raw/100 : (unitStr === "ml") ? raw/1000 : raw/1000;
     unit.kg = Math.round(newKg * 10000) / 10000;
     // Recalculer parent
+    item._prevKg = item.kg; // snapshot avant mise à jour
     item.kg  = item.units.reduce((s, u) => s + (Number(u.kg) || 0), 0);
     item.qty = formatQtyFromKgAndUnit(item.kg, unitStr);
+    recomputeFoodItemTotals(item);
+    delete item._prevKg;
     saveAppData(); renderTable(); renderSummary();
   }
   function cancel() { renderTable(); }
