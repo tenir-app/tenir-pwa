@@ -401,7 +401,7 @@
     .survival-note-list { display:flex; flex-direction:column; gap:6px; }
     .survival-note-list li { font-size:13px; color:var(--text2); line-height:1.45;
       list-style:none; padding-left:18px; position:relative; }
-    .survival-note-list li::before { content:"›"; position:absolute; left:0;
+    .survival-note-list li::before { content:"•"; position:absolute; left:0;
       color:var(--text3); font-weight:700; }
     .need-banner { display:flex; align-items:center; gap:10px; background:var(--blue-bg); border:0.5px solid var(--blue); border-radius:var(--r); padding:11px 14px; margin-bottom:1.25rem; font-size:13px; color:var(--blue); }
     .need-banner.warn-banner { background:var(--amber-bg); border-color:var(--amber); color:var(--amber); }
@@ -567,7 +567,7 @@
 
     /* ── Mode beta ── */
     .beta-banner { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
-                   gap:6px; padding:5px 10px; margin-top:10px;
+                   gap:6px; padding:8px 10px; margin-top:0;
                    background:var(--surface2); border:0.5px solid var(--border2);
                    border-radius:6px; font-size:10px; color:var(--text3); width:100%; box-sizing:border-box; }
     .beta-banner-text { display:flex; align-items:center; gap:6px; }
@@ -959,10 +959,6 @@
     <h1>Tenir<span class="tenir-dot">.</span></h1>
     <p>Wie lange reicht Ihr Vorrat wirklich&nbsp;?</p>
     <p class="tagline">Wasser · Kalorien · Proteine · Kochen — reale Reichweite statt nur Inventar.</p>
-    <div class="beta-banner">
-      <div class="beta-banner-text"><span class="beta-badge">Beta 0.9</span><span>Lokale Beta-Version — Daten regelmäßig sichern.</span></div>
-      <a class="beta-feedback" href="mailto:tenir.app@proton.me">✉ Problem melden</a>
-    </div>
   </div>
 
   <div class="tabs">
@@ -1019,7 +1015,7 @@
         </div>
         <div class="quick-entry-feedback" id="quick-feedback"></div>
         <div class="ffu-hint" id="ffu-hint-mic">
-          <strong>Tippen Sie in dieses Feld, dann auf das Mikrofon neben der Leertaste.</strong>
+          <strong id="micro-helper-text">Tippen Sie in dieses Feld und dann auf das Mikrofon neben der Leertaste.</strong>
           <div class="ffu-example">Beispiel: 400 g Kichererbsen Dose Mai 2026</div>
         </div>
         <p style="font-size:11px;color:var(--text3);margin:4px 0 10px;font-style:italic;line-height:1.4">Auch ungenaue Spracheingaben funktionieren oft.</p>
@@ -1099,7 +1095,7 @@
         <button class="btn btn-mic" id="mic-btn" onclick="toggleVoice()" title="Spracheingabe">🎤</button>
         <button class="btn btn-mic-test" id="mic-test-btn" onclick="testMicrophone()" title="Mikrofon testen" style="display:none">🔬</button>
       </div>
-      <div class="quick-entry-hint">iPhone-Tipp: Diktieren Sie z.B. „Basmati-Reis 1 Kilo Ablauf Juni 2028".</div>
+      <div class="quick-entry-hint"><span id="micro-tip-text">iPhone-Tipp: Diktieren Sie z.B. „Basmati-Reis 1 Kilo Ablauf Juni 2028".</span></div>
       </details><!-- /classic-form-details -->
 
       <div class="speech-status" id="speech-status"></div>
@@ -1798,11 +1794,14 @@ const LOCAL_FOOD_DB = {
     openedLifeCold: "plusieurs mois si refermé au sec", openedLifeNoCold: "plusieurs mois si refermé au sec",
   },
   "pates_generique": {
-    label: "Pâtes", labelDE: "Nudeln",
-    aliases: ["pates","pasta","nudeln"],
+    label: "Pâtes", labelDE: "Nudel / Teigwaren (generisch)",
+    aliases: ["pates","pasta","nudeln","nouille","nouilles",
+              "sac de nouilles","sacs de nouilles","paquet de nouilles",
+              "sachet de nouilles","pates alimentaires","nouilles de ble",
+              "teigwaren","packung nudeln","packungen nudeln"],
     category: "cereale", state: "dry", requiresCooking: true,
     waterNeed: "high", energyNeed: "medium",
-    generic: ["pates","pasta","nudeln"],
+    generic: ["pates","pasta","nudeln","nouille","nouilles","teigwaren"],
     nutrition: { kcal:3500, protein:120, carbs:700, fat:15 },
   },
   "flocons_avoine": {
@@ -6371,8 +6370,48 @@ function parseQuickFoodInput(text) {
   // ── Normalisation vocale avant tout parsing ──
   const input = normalizeVoiceFoodInput(text);
 
-  // Normalise sans retirer les accents (utile pour les noms)
+  // Normalise ohne Akzente (nützlich für Namen)
   const t = input.toLowerCase().replace(/'/g, " ").replace(/\s+/g, " ").trim();
+
+  // ════════════════════════════════════════════════════════
+  // CAS PRIORITAIRE : Anzahl × Behälter + Produkt + Gewicht
+  // "3 Packungen Nudeln 500 g" → 3 × 500 g = 1500 g
+  // "3 sacs de nouilles 500 g" → 3 × 500 g = 1500 g
+  // ════════════════════════════════════════════════════════
+  {
+    const _tN = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const _CONT_FR = "sacs?|sachets?|paquets?|bo[ii]tes?|canettes?|bocaux?|bouteilles?";
+    const _CONT_DE = "packung(?:en)?|pakete?|beutel|dosen?|glaser|flaschen?";
+    const _cPat = new RegExp(
+      `^(\\d+(?:[,.]\\d+)?)\\s+(?:${_CONT_FR}|${_CONT_DE})\\s+(?:de\\s+|d'|von\\s+|of\\s+)?` +
+      `([\\w\\-' aauuoossee]+?)` +
+      `\\s+(\\d+(?:[,.]\\d+)?)\\s*(g|kg|ml|l|cl)(?:\\s+|$)`,
+      "i"
+    );
+    const _cM = _cPat.exec(_tN);
+    if (_cM) {
+      const _count  = parseFloat(_cM[1].replace(",", "."));
+      const _pName  = _cM[2].trim();
+      const _wUnit  = parseFloat(_cM[3].replace(",", "."));
+      const _wLabel = _cM[4].toLowerCase();
+      const _wKg    = _wLabel === "kg" ? _wUnit : _wLabel === "ml" ? _wUnit / 1000 : _wLabel === "l" ? _wUnit : _wLabel === "cl" ? _wUnit / 100 : _wUnit / 1000;
+      const _totalKg = _count * _wKg;
+      const _rest  = t.slice(_cM[0].length).trim();
+      const _inner = parseQuickFoodInput(_pName + " " + _wUnit + " " + _wLabel + (_rest ? " " + _rest : ""));
+      const _expiry = _inner?.expiry || null;
+      return {
+        name:         _pName,
+        qty:          _totalKg >= 1 ? _totalKg : _totalKg * 1000,
+        unit:         _totalKg >= 1 ? "kg" : "g",
+        kg:           _totalKg,
+        count:        _count,
+        unitWeightKg: _wKg,
+        expiry:       _expiry,
+        packageUnit:  null,
+        _rawName:     _pName,
+      };
+    }
+  }
 
   // ════════════════════════════════════════════════════════
   // CAS PRIORITAIRE : Brausetabletten / comprimés effervescents
@@ -7182,6 +7221,33 @@ async function scanConfirm() {
  * pré-remplit les champs classiques et affiche un feedback immédiat.
  * En mode scan rapide, affiche aussi l'aperçu de confirmation.
  */
+
+// ── Geräteerkennung und adaptive Mikrofon-Hilfetexte ──
+function getDeviceOS() {
+  const ua = navigator.userAgent || "";
+  if (/iPad|iPhone|iPod/.test(ua)) return "ios";
+  if (/Android/.test(ua)) return "android";
+  return "other";
+}
+function getMicroHelperText() {
+  const os = getDeviceOS();
+  if (os === "ios")     return "Tippen Sie in dieses Feld und dann auf das Mikrofon neben der Leertaste.";
+  if (os === "android") return "Tippen Sie in dieses Feld und nutzen Sie das Mikrofon Ihrer Android-Tastatur, falls verfügbar. Bei Gboard befindet es sich oft in der oberen Tastaturleiste.";
+  return "Sie können den Text über die Tastatur eingeben. Die Spracheingabe hängt von Ihrem Gerät ab.";
+}
+function getMicroTipText() {
+  const os = getDeviceOS();
+  if (os === "ios")     return "iPhone-Tipp: Diktieren Sie z.B. „Basmati-Reis 1 Kilo Ablauf Juni 2028\".";
+  if (os === "android") return "Android-Tipp: Diktieren oder tippen Sie z.B. „Basmati-Reis 1 Kilo Ablauf Juni 2028\".";
+  return "Beispiel: Geben Sie „Basmati-Reis 1 Kilo Ablauf Juni 2028\" ein.";
+}
+function getMicroStatusText() {
+  const os = getDeviceOS();
+  if (os === "ios")     return getMicroStatusText();
+  if (os === "android") return "🎤 Android-Diktat: Mikrofontaste der Tastatur (Gboard: obere Leiste)";
+  return "🎤 Spracheingabe über Tastatur-Mikrofon";
+}
+
 function analyzeQuickInput() {
   const input    = document.getElementById("quick-input");
   const feedback = document.getElementById("quick-feedback");
@@ -9665,7 +9731,7 @@ function animateCountUp(el, target, suffix, decimals, duration) {
   duration = duration ?? 650;
   if (!el) return;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    el.textContent = target >= 0.05 ? target.toFixed(decimals) + suffix : "—" + suffix;
+    el.textContent = target >= 0.05 ? target.toFixed(decimals) + suffix : "0" + suffix;
     return;
   }
   const start = performance.now();
@@ -9674,11 +9740,11 @@ function animateCountUp(el, target, suffix, decimals, duration) {
     const progress = Math.min((now - start) / duration, 1);
     const eased    = 1 - Math.pow(1 - progress, 3);
     const value    = (target - 0) * eased;
-    el.textContent = target >= 0.05 ? value.toFixed(decimals) + suffix : "—" + suffix;
+    el.textContent = target >= 0.05 ? value.toFixed(decimals) + suffix : "0" + suffix;
     if (progress < 1) {
       requestAnimationFrame(frame);
     } else {
-      el.textContent = target >= 0.05 ? target.toFixed(decimals) + suffix : "—" + suffix;
+      el.textContent = target >= 0.05 ? target.toFixed(decimals) + suffix : "0" + suffix;
       el.classList.remove("counting");
     }
   }
@@ -9984,7 +10050,7 @@ function renderSummary() {
   const br = document.getElementById("bar-real");
   if (br) { br.style.width = pr + "%"; br.style.background = barHex(realDays); }
   const lbv = document.getElementById("ls-bar-value");
-  if (lbv) lbv.textContent = (isFinite(realDays) ? realDays.toFixed(1) : "—") + " T";
+  if (lbv) lbv.textContent = (isFinite(realDays) ? realDays.toFixed(1) : "0") + " T";
   const tdl = document.getElementById("target-days-label");
   if (tdl) tdl.textContent = (_tgt || 30) + " T";
   const atEl = document.getElementById("action-title");
@@ -12335,6 +12401,13 @@ function _createUserOverride(localKey) {
   setHint("Werte anpassen und speichern — Ihre Version hat Vorrang.", "var(--blue)");
 }
 </script>
+
+<div style="padding:0 16px 16px">
+    <div class="beta-banner">
+      <div class="beta-banner-text"><span class="beta-badge">Beta 0.9</span><span>Lokale Beta-Version — Daten regelmäßig sichern.</span></div>
+      <a class="beta-feedback" href="mailto:tenir.app@proton.me">✉ Problem melden</a>
+    </div>
+</div>
 
 </body>
 </html>
