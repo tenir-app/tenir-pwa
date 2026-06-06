@@ -10481,7 +10481,18 @@ function openDoNotLoseModal() {
     });
   }
 
-  const _loc = item => {
+  const _loc = (item, openedUnit) => {
+    if (openedUnit && (openedUnit.location || openedUnit.localisation)) {
+      const loc = (openedUnit.location || openedUnit.localisation || "").trim();
+      if (loc && loc !== "—") return `<span class="dontlose-inline-location"> · 📍 ${loc}</span>`;
+    }
+    if (Array.isArray(item.units)) {
+      const openedWithLoc = item.units.find(u => u.openedAt && (u.location || u.localisation));
+      if (openedWithLoc) {
+        const loc = (openedWithLoc.location || openedWithLoc.localisation || "").trim();
+        if (loc && loc !== "—") return `<span class="dontlose-inline-location"> · 📍 ${loc}</span>`;
+      }
+    }
     let loc = item.location || item.localisation || item.storageLocation || "";
     if ((!loc || loc === "—") && Array.isArray(item.units)) {
       const found = item.units.find(u => u.location || u.localisation || u.storageLocation);
@@ -12013,7 +12024,11 @@ function obInjectWeiter(panelId, step) {
 
 <script>
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./service-worker.js");
+    navigator.serviceWorker.register("./service-worker.js", {
+      updateViaCache: "none"  // empêche le cache HTTP sur service-worker.js
+    })
+    .then(reg => reg.update()) // vérifie une mise à jour immédiatement
+    .catch(() => {});
   }
 </script>
 

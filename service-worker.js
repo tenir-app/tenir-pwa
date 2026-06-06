@@ -33,16 +33,32 @@ self.addEventListener("activate", event => {
   );
 });
 
-// Fetch : cache d'abord, réseau en fallback
-// Fallback navigation iOS : requêtes navigate → halten.html depuis le cache
+// Fetch :
+// - Navigations HTML → Network-First (détecte les nouvelles versions)
+//   + fallback cache si hors ligne
+// - Autres assets → Cache-First (images, icônes)
 self.addEventListener("fetch", event => {
   if (event.request.mode === "navigate") {
     event.respondWith(
-      caches.match(event.request)
-        .then(cached => cached || caches.match("./halten.html"))
+      fetch(event.request)
+        .then(response => {
+          // Mettre à jour le cache avec la réponse réseau
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(c => c.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() =>
+          // Offline : servir depuis le cache
+          caches.match(event.request)
+            .then(cached => cached || caches.match("./tenir.html"))
+        )
     );
     return;
   }
+
+  // Assets statiques : Cache-First
   event.respondWith(
     caches.match(event.request)
       .then(cached => cached || fetch(event.request))
