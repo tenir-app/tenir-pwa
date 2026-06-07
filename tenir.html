@@ -503,6 +503,19 @@
     .adv-checkbox-row input[type="checkbox"] { flex:0 0 auto; margin-top:2px; }
     .adv-checkbox-label { display:block; min-width:0; max-width:100%; font-weight:400;
       white-space:normal; overflow-wrap:normal; word-break:normal; line-height:1.35; }
+
+    /* ── Onboarding nav footer ── */
+    .ob-nav-footer { display:flex; justify-content:flex-end; align-items:center;
+                     gap:8px; margin-top:18px; margin-bottom:18px;
+                     width:100%; clear:both; flex-wrap:wrap; }
+    .ob-nav-footer .weiter-btn { margin-top:0; }
+    .ob-back-top-btn { display:inline-flex; align-items:center; justify-content:center;
+                       padding:7px 13px; border-radius:var(--r);
+                       border:0.5px solid var(--border2); background:transparent;
+                       color:var(--text3); font-size:12px; font-weight:500;
+                       cursor:pointer; white-space:nowrap; }
+    .ob-back-top-btn:hover { background:var(--surface2); color:var(--text2); }
+    @media(max-width:540px) { .ob-nav-footer { justify-content:flex-end; } }
     .debug-only { display:none !important; }
     body.debug-mode .debug-only { display:inline-block !important; }
     #toggle-parser-tests-btn { margin-top:1.5rem; font-size:11px; opacity:.5; background:none; border:0.5px dashed var(--border2); color:var(--text3); padding:4px 10px; border-radius:4px; cursor:pointer; }
@@ -11455,60 +11468,76 @@ function obSetStep(step) {
   localStorage.setItem(OB_STEP, String(step));
 }
 
-function obInjectWeiter(panelId, step) {
-  const w = WEITER[step];
-  if (!w) return;
-  const panel = document.getElementById("panel-" + panelId);
-  if (!panel) return;
-  if (panel.querySelector(".weiter-btn")) return;
-  const btn = document.createElement("button");
-  btn.className   = "weiter-btn";
-  btn.textContent = w.label;
-  btn.onclick = function() {
-    btn.remove();
-    switchTab(w.next);
-    // Scroll ciblé selon l'onglet — iOS : délai pour laisser le DOM se stabiliser
-    setTimeout(() => {
-      if (w.next === 'foyer') {
-        setTimeout(() => document.getElementById('foyer-target-section-title')
-          ?.scrollIntoView({ block:'start', behavior:'smooth' }), 80);
-      } else if (w.next === 'water') {
-        const el = document.getElementById('water-add-section-title') ||
-                   document.getElementById('w-name');
-        el ? el.scrollIntoView({ block:'start', behavior:'smooth' })
-           : window.scrollTo({ top:0, left:0, behavior:'smooth' });
-      } else if (w.next === 'cooking') {
-        const el = document.getElementById('cook-gas-section-title') ||
-                   document.getElementById('cook-gas-name');
-        el ? el.scrollIntoView({ block:'start', behavior:'smooth' })
-           : window.scrollTo({ top:0, left:0, behavior:'smooth' });
-      } else {
-        window.scrollTo({ top:0, left:0, behavior:'smooth' });
-      }
-    }, 80);
-    obSetStep(step + 1);
-  };
-  panel.appendChild(btn);
+
+/* ═══════════════════════════════════════════════════════════
+   NAVIGATION ONBOARDING — Footer centralisé
+   Remplace le système d'injection dispersée précédent.
+═══════════════════════════════════════════════════════════ */
+
+function scrollToTop() {
+  window.scrollTo({ top:0, behavior:"smooth" });
 }
 
-(function patchRenders() {
-  const orig = {
-    renderFoyer:   window.renderFoyer,
-    renderWater:   window.renderWater,
-    renderTable:   window.renderTable,
-    renderCooking: window.renderCooking,
-  };
-  const stepFor  = { renderFoyer:1, renderWater:2, renderTable:3, renderCooking:4 };
-  const panelFor = { renderFoyer:"foyer", renderWater:"water", renderTable:"inv", renderCooking:"cooking" };
+// Configuration des footers par panneau
+const OB_NAV = {
+  foyer:   { back: true, next: "water",   nextLabel: "Continuer vers Eau →" },
+  water:   { back: true, next: "inv",     nextLabel: "Continuer vers Nourriture →" },
+  inv:     { back: true, next: "cooking", nextLabel: "Continuer vers Cuisson →" },
+  cooking: { back: true, next: "summary", nextLabel: "Voir mon bilan →" },
+  summary: { back: true, next: null },
+};
 
-  Object.keys(orig).forEach(fn => {
+function ensurePanelNavFooters() {
+  // Ne s'exécute que si l'onboarding est actif OU a été complété (OB_KEY présent)
+  if (!localStorage.getItem(OB_KEY) && !localStorage.getItem(OB_STEP)) return;
+
+  Object.entries(OB_NAV).forEach(([panelId, cfg]) => {
+    const panel = document.getElementById("panel-" + panelId);
+    if (!panel) return;
+
+    // Supprimer tout ancien footer, weiter-btn et back-top-btn isolés
+    panel.querySelectorAll(".ob-nav-footer, .weiter-btn, .ob-back-top-btn").forEach(el => el.remove());
+
+    // Créer le nouveau footer propre
+    const footer = document.createElement("div");
+    footer.className = "ob-nav-footer";
+
+    if (cfg.back) {
+      const backBtn = document.createElement("button");
+      backBtn.className = "ob-back-top-btn";
+      backBtn.textContent = "↑ Retour en haut";
+      backBtn.onclick = scrollToTop;
+      footer.appendChild(backBtn);
+    }
+
+    if (cfg.next) {
+      const nextBtn = document.createElement("button");
+      nextBtn.className = "weiter-btn";
+      nextBtn.textContent = cfg.nextLabel;
+      nextBtn.onclick = () => { switchTab(cfg.next); scrollToTop(); };
+      footer.appendChild(nextBtn);
+    }
+
+    panel.appendChild(footer);
+  });
+}
+
+// Hooks : appeler après chaque rendu ou changement d'onglet
+(function _patchSwitchTabForOb() {
+  const _origSwitch = window.switchTab;
+  window.switchTab = function(tab) {
+    _origSwitch.apply(this, arguments);
+    setTimeout(ensurePanelNavFooters, 50);
+  };
+})();
+
+(function _patchRendersForOb() {
+  ["renderFoyer","renderWater","renderTable","renderCooking","renderSummary"].forEach(fn => {
+    const orig = window[fn];
+    if (!orig) return;
     window[fn] = function() {
-      orig[fn].apply(this, arguments);
-      const step = parseInt(localStorage.getItem(OB_STEP) || "0");
-      if (!step) return;
-      if (stepFor[fn] === step) {
-        obInjectWeiter(panelFor[fn], step);
-      }
+      orig.apply(this, arguments);
+      setTimeout(ensurePanelNavFooters, 30);
     };
   });
 })();
@@ -11518,19 +11547,16 @@ function obInjectWeiter(panelId, step) {
     localStorage.removeItem("tenir_onboarding_after_demo");
     switchTab("foyer");
     renderFoyer();
-    obInjectWeiter("foyer", 1);
+    setTimeout(ensurePanelNavFooters, 80);
     return;
   }
   if (!localStorage.getItem(OB_KEY)) {
     obOpen();
   } else {
-    const step = parseInt(localStorage.getItem(OB_STEP) || "0");
-    if (step > 0 && step < 5) {
-      const panels = ["foyer","water","inv","cooking"];
-      obInjectWeiter(panels[step - 1], step);
-    }
+    setTimeout(ensurePanelNavFooters, 80);
   }
 })();
+
 </script>
 
 <script>
