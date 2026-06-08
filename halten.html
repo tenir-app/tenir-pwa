@@ -148,7 +148,7 @@
     .quick-entry-hint { font-size:11px; color:var(--text3); margin:2px 0 4px; display:block; line-height:1.4; }
     /* ── Sitzungs-Lagerort ── */
     .location-field  { margin-bottom:10px; }
-    .location-label  { font-size:12px; font-weight:600; color:var(--text2); display:block; margin-bottom:4px; }
+    .location-label  { font-size:12px; font-weight:600; color:var(--text2); display:flex; align-items:center; gap:5px; margin-bottom:4px; }
     .location-input  { width:100%; box-sizing:border-box; font-size:14px; padding:8px 10px;
       border:1px solid var(--border2); border-radius:var(--r);
       background:var(--surface); color:var(--text); }
@@ -516,6 +516,15 @@
                        cursor:pointer; white-space:nowrap; }
     .ob-back-top-btn:hover { background:var(--surface2); color:var(--text2); }
     @media(max-width:540px) { .ob-nav-footer { justify-content:flex-end; } }
+
+    /* ── Remplacement emojis UI → symboles sobres ── */
+    .badge-ok     { display:inline-flex;align-items:center;gap:3px;color:var(--green);font-size:11px;font-weight:600 }
+    .badge-warn   { display:inline-flex;align-items:center;gap:3px;color:var(--amber);font-size:11px;font-weight:600 }
+    .badge-danger { display:inline-flex;align-items:center;gap:3px;color:var(--red);font-size:11px;font-weight:600 }
+    .badge-ok::before     { content:"●";font-size:8px }
+    .badge-warn::before   { content:"▲";font-size:8px }
+    .badge-danger::before { content:"✕";font-size:9px }
+    .status-dot { display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-right:3px }
     .debug-only { display:none !important; }
     body.debug-mode .debug-only { display:inline-block !important; }
     #toggle-parser-tests-btn { margin-top:1.5rem; font-size:11px; opacity:.5; background:none; border:0.5px dashed var(--border2); color:var(--text3); padding:4px 10px; border-radius:4px; cursor:pointer; }
@@ -785,30 +794,37 @@
     body.dark .dontlose-title { color:#f0efe8; }
     .dontlose-sub    { font-size:12px; color:var(--text3); margin-bottom:20px; line-height:1.5; }
     .dontlose-section-title { font-size:10px; text-transform:uppercase; letter-spacing:.08em;
-                              color:var(--text3); font-weight:700; margin:20px 0 10px;
-                              padding-bottom:6px; border-bottom:1px solid var(--border); }
+                              color:var(--text3); font-weight:700; margin:18px 0 8px;
+                              padding-bottom:5px; border-bottom:1px solid var(--border); }
     .dontlose-section-title:first-child { margin-top:0; }
+    /* couleurs par catégorie — texte uniquement, pas de fond */
+    .dontlose-title-blue  { color:var(--blue);  border-color:var(--blue);  opacity:.85; }
+    .dontlose-title-red   { color:var(--red);   border-color:var(--red);   opacity:.85; }
+    .dontlose-title-amber { color:var(--amber); border-color:var(--amber); opacity:.85; }
+    .dontlose-title-green { color:var(--green); border-color:var(--green); opacity:.85; }
     .dontlose-item   { display:grid; grid-template-columns:minmax(0,1fr) auto;
-                       align-items:start; gap:6px 10px;
-                       padding:10px 0; border-bottom:0.5px solid var(--border); font-size:13px; min-width:0; }
+                       align-items:center; gap:6px 12px;
+                       padding:9px 0; border-bottom:0.5px solid var(--border); font-size:13px; min-width:0; }
     .dontlose-item:last-child { border-bottom:none; }
     .dontlose-item-name { font-weight:500; min-width:0;
                          line-height:1.35; overflow-wrap:break-word; word-break:normal; }
     .dontlose-item-actions { display:flex; align-items:center; justify-content:flex-end;
-                             gap:6px; flex-shrink:0; white-space:nowrap; }
+                             gap:8px; flex-shrink:0; white-space:nowrap; }
     .dontlose-item-badge { font-size:11px; font-weight:600; padding:3px 9px; border-radius:99px;
-                           white-space:nowrap; flex-shrink:0; margin-top:1px; }
-    .dontlose-badge-red   { background:#fee2e2; color:#a32d2d; }
-    .dontlose-badge-amber { background:#fef3c7; color:#854f0b; }
-    body.dark .dontlose-badge-red   { background:#501313; color:#f09595; }
-    body.dark .dontlose-badge-amber { background:#412402; color:#ef9f27; }
+                           white-space:nowrap; flex-shrink:0; }
+    .dontlose-badge-red   { background:var(--red-bg);   color:var(--red);   }
+    .dontlose-badge-amber { background:var(--amber-bg); color:var(--amber); }
+    .dontlose-badge-green { background:var(--green-bg); color:var(--green); }
+    .dontlose-badge-blue  { background:var(--blue-bg);  color:var(--blue);  }
     .dontlose-empty  { font-size:14px; color:var(--text3); padding:16px 0; text-align:center; }
     .dontlose-item-location { font-size:11px; color:var(--text3); margin-top:2px; }
+    /* séparateur unique · sans pictogramme ⊙ */
     .dontlose-inline-location { font-weight:400; font-size:11px; color:var(--text3);
-                                margin-left:4px; white-space:nowrap; }
-    .dontlose-delete-btn { background:none; border:none; color:var(--red); font-size:11px;
-                           cursor:pointer; opacity:.6; padding:0; flex-shrink:0; }
-    .dontlose-delete-btn:hover { opacity:1; text-decoration:underline; }
+                                opacity:.75; margin-left:2px; white-space:nowrap; }
+    .dontlose-delete-btn { background:none; border:0.5px solid var(--border2); color:var(--text3);
+                           font-size:11px; border-radius:4px; cursor:pointer; opacity:.7;
+                           padding:2px 7px; flex-shrink:0; transition:opacity .15s; }
+    .dontlose-delete-btn:hover { opacity:1; color:var(--red); border-color:var(--red); }
     .dontlose-unit-sel  { font-size:11px; border:1px solid var(--border); border-radius:4px;
                           padding:1px 3px; background:var(--surface1,#fff);
                           color:var(--text1); cursor:pointer; }
@@ -1003,7 +1019,7 @@
     <div class="add-form">
 
       <div class="location-field">
-        <label class="location-label" for="session-location">📍 Lagerort dieser Sitzung</label>
+        <label class="location-label" for="session-location"><svg aria-hidden="true" focusable="false" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="vertical-align:middle;opacity:.7;flex-shrink:0"><circle cx="8" cy="7" r="3"/><path d="M8 2a5 5 0 0 1 5 5c0 3-5 8-5 8S3 10 3 7a5 5 0 0 1 5-5z"/></svg> Lagerort</label>
         <input type="text" id="session-location" class="location-input"
           placeholder="z.B. Regal 1 Keller, Kiste 2…"
           autocomplete="off" autocorrect="off"/>
@@ -1017,7 +1033,7 @@
       <!-- Schnelleingabe — Hauptpfad mobil -->
       <div class="quick-entry-section">
         <div class="quick-entry-header">
-          <label class="quick-entry-label" for="quick-input">📱 Schnelleingabe (Diktat oder Text)</label>
+          <label class="quick-entry-label" for="quick-input"><svg aria-hidden="true" focusable="false" width="14" height="13" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="1.5" style="vertical-align:middle;opacity:.7;flex-shrink:0"><rect x="1" y="1" width="16" height="12" rx="2"/><line x1="4" y1="5" x2="4" y2="5.1" stroke-linecap="round" stroke-width="2"/><line x1="7" y1="5" x2="7" y2="5.1" stroke-linecap="round" stroke-width="2"/><line x1="10" y1="5" x2="10" y2="5.1" stroke-linecap="round" stroke-width="2"/><line x1="13" y1="5" x2="13" y2="5.1" stroke-linecap="round" stroke-width="2"/><line x1="4" y1="8.5" x2="13" y2="8.5" stroke-linecap="round" stroke-width="2"/></svg> Schnelleingabe</label>
         </div>
         <div class="quick-entry-row">
           <input type="text" id="quick-input"
@@ -1049,8 +1065,8 @@
           </div>
           <div class="scan-preview-actions">
             <button class="btn btn-scan-confirm" id="scan-confirm-btn" onclick="scanConfirm()">✓ Bestätigen &amp; weiter</button>
-            <button class="btn" style="background:var(--surface2)" onclick="scanManualEntry()">✏ Manuelle Eingabe</button>
-            <button class="btn" style="background:var(--surface2)" onclick="scanChooseFromBase()">📖 Lebensmittelbasis</button>
+            <button class="btn" style="background:var(--surface2)" onclick="scanManualEntry()">Manuelle Eingabe</button>
+            <button class="btn" style="background:var(--surface2)" onclick="scanChooseFromBase()">Lebensmittelbasis</button>
             <button class="btn btn-scan-cancel" onclick="scanCancel()">Neu eingeben</button>
           </div>
         </div>
@@ -1105,7 +1121,7 @@
         </div>
         <div class="field f-exp"><label>Nutzungsbeginn</label><input type="month" id="f-use"/></div>
         <button class="btn" id="food-add-btn" onclick="addFoodItem()">+ Hinzufügen</button>
-        <button class="btn btn-mic" id="mic-btn" onclick="toggleVoice()" title="Spracheingabe">🎤</button>
+        <button class="btn btn-mic" id="mic-btn" onclick="toggleVoice()" title="Spracheingabe"><svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true" style="vertical-align:middle"><path d="M8 1a2.5 2.5 0 0 0-2.5 2.5v5a2.5 2.5 0 0 0 5 0v-5A2.5 2.5 0 0 0 8 1Zm-1 9.93V13H6v1h4v-1H9v-2.07A5.003 5.003 0 0 0 13 6.5h-1a4 4 0 0 1-8 0H3a5.003 5.003 0 0 0 4 4.93Z"/></svg></button>
         <button class="btn btn-mic-test" id="mic-test-btn" onclick="testMicrophone()" title="Mikrofon testen" style="display:none">🔬</button>
       </div>
       <div class="quick-entry-hint"><span id="micro-tip-text">iPhone-Tipp: Diktieren Sie z.B. „Basmati-Reis 1 Kilo Ablauf Juni 2028".</span></div>
@@ -1114,24 +1130,24 @@
       <div class="speech-status" id="speech-status"></div>
       <div class="form-hint" id="food-hint"></div>
       <div class="pkg-warning" id="pkg-warning">
-        <strong>⚠️ Gewicht erforderlich</strong>
+        <strong>⚠ Gewicht erforderlich</strong>
         Nicht möglich mit <span id="pkg-warning-unit">"Dose"</span>, "Packung" usw.
-        <div class="pkg-fix">⚠️ Bitte echtes Gewicht angeben (g, kg, ml, L)</div>
+        <div class="pkg-fix">⚠ Bitte echtes Gewicht angeben (g, kg, ml, L)</div>
         <div class="pkg-tip" id="pkg-warning-tip"></div>
       </div>
       <!-- Bestätigung "ohne Ablaufdatum" -->
       <div id="no-exp-confirm" class="confirm-box hidden">
         <p class="confirm-msg">Kein Ablaufdatum angegeben.</p>
         <div class="confirm-actions">
-          <button class="btn" onclick="cancelNoExp()">📅 Datum eingeben</button>
+          <button class="btn" onclick="cancelNoExp()">Datum eingeben</button>
           <button class="btn btn-noexp-ok" onclick="confirmNoExp()">Ohne Datum hinzufügen</button>
         </div>
       </div>
       <!-- Kandidatenauswahl -->
       <div class="candidate-panel" id="candidate-panel">
-        <div class="candidate-panel-title">🔍 Mehrere Treffer — bitte wählen:</div>
+        <div class="candidate-panel-title">Mehrere Treffer — bitte wählen:</div>
         <div class="candidate-list" id="candidate-list"></div>
-        <button class="candidate-manual-btn" onclick="addFoodManually()">✏️ Nährwerte manuell eingeben</button>
+        <button class="candidate-manual-btn" onclick="addFoodManually()">Nährwerte manuell eingeben</button>
       </div>
       <!-- Debug-Leiste (standardmäßig ausgeblendet) -->
       <div style="text-align:right;margin-top:4px">
@@ -1141,7 +1157,7 @@
     </div>
     <div class="sec-title" id="ajouts-manuels-title">Manuelle Einträge</div>
     <div class="inv-list" id="manual-food-list" style="margin-bottom:1rem"><div class="empty-inv">Noch keine manuellen Einträge.</div></div>
-    <button onclick="openBaseModal()" style="width:100%;margin-bottom:1.5rem;padding:10px;border-radius:10px;border:0.5px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;text-align:left;">📚 Lebensmittelbasis — ansehen und anpassen</button>
+    <button onclick="openBaseModal()" style="width:100%;margin-bottom:1.5rem;padding:10px;border-radius:10px;border:0.5px solid var(--border2);background:var(--surface2);color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;text-align:left;"><svg aria-hidden="true" focusable="false" width="14" height="13" viewBox="0 0 16 14" fill="currentColor" style="vertical-align:middle;opacity:.7;flex-shrink:0"><rect x="0" y="1" width="3" height="3" rx=".5"/><rect x="5" y="1" width="11" height="3" rx="1"/><rect x="0" y="5.5" width="3" height="3" rx=".5"/><rect x="5" y="5.5" width="11" height="3" rx="1"/><rect x="0" y="10" width="3" height="3" rx=".5"/><rect x="5" y="10" width="7" height="3" rx="1"/></svg> Lebensmittelbasis — ansehen und anpassen</button>
 
     <!-- Vollständiges Inventar -->
     <div class="print-title">Lebensmittelinventar — sortiert nach Nutzungsbeginn<br><span id="print-date" style="font-size:13px;font-weight:400"></span></div>
@@ -1160,8 +1176,8 @@
         <option value="name">Sortieren nach Name</option>
         <option value="location">Sortieren nach Lagerort</option>
       </select>
-      <button class="btn" onclick="printInventoryByUseFrom()">🖨 Inventar drucken</button>
-      <button class="btn" onclick="printInventoryByUnit()" style="background:var(--blue-bg);color:var(--blue);border-color:var(--blue)">🖨 Nach Einheiten drucken</button>
+      <button class="btn" onclick="printInventoryByUseFrom()">Inventar drucken</button>
+      <button class="btn" onclick="printInventoryByUnit()" style="background:var(--blue-bg);color:var(--blue);border-color:var(--blue)">Nach Einheiten drucken</button>
     </div>
     <div class="inv-wrap">
       <table class="inv-table" id="inv-table">
@@ -1336,14 +1352,14 @@
     <button id="toggle-parser-tests-btn" class="debug-only" onclick="toggleParserTestsPanel()">🧪 Tests anzeigen</button>
 
     <div class="vtest-bar">
-      <button class="btn vtest-toggle-btn" onclick="toggleVoiceTestPanel()">🧪 Sprachtests</button>
+      <button class="btn vtest-toggle-btn" onclick="toggleVoiceTestPanel()">Sprachtests</button>
     </div>
     <div id="vtest-panel" class="vtest-panel" style="display:none">
       <div class="vtest-header">
         <span class="vtest-title">Test-Runner — Spracheingabe Lebensmittel</span>
         <button class="btn" onclick="runAllVoiceFoodTests()">▶ Alle Tests starten</button>
-        <button class="btn" onclick="runVoiceFoodRegressionTests()" style="background:var(--blue-bg);color:var(--blue);border-color:var(--blue)">🔒 Regressionstests</button>
-        <button class="btn" onclick="runRobustnessTests()" style="background:var(--amber-bg);color:var(--amber);border-color:var(--amber)">🔥 Robustheitstests</button>
+        <button class="btn" onclick="runVoiceFoodRegressionTests()" style="background:var(--blue-bg);color:var(--blue);border-color:var(--blue)">Regressionstests</button>
+        <button class="btn" onclick="runRobustnessTests()" style="background:var(--amber-bg);color:var(--amber);border-color:var(--amber)">Robustheitstests</button>
       </div>
       <div id="vtest-summary" class="vtest-summary"></div>
       <div id="vtest-results" class="vtest-results"></div>
@@ -1479,7 +1495,7 @@
         </div>
       </div>
       <div class="limit-note" id="cook-capacity-note"></div>
-      <div class="cook-warning">⚠️ Vereinfachter Richtwert: Wärmeverluste, tatsächlicher Brennerwirkungsgrad und Bedingungen (Wind, Topf, Deckel) nicht berücksichtigt. Diese Werte sind Richtwerte, keine Garantie.</div>
+      <div class="cook-warning">⚠ Vereinfachter Richtwert: Wärmeverluste, tatsächlicher Brennerwirkungsgrad und Bedingungen (Wind, Topf, Deckel) nicht berücksichtigt. Diese Werte sind Richtwerte, keine Garantie.</div>
     </div>
   </div>
 
@@ -1635,7 +1651,7 @@
           <div id="vit-covered-list"></div>
         </div>
         <div class="vit-block missing" id="vit-missing-block" style="display:none">
-          <div class="vit-block-title" id="vit-missing-title">❌ Fehlende Kategorien</div>
+          <div class="vit-block-title" id="vit-missing-title">✕ Fehlende Kategorien</div>
           <div id="vit-missing-list"></div>
         </div>
         <div id="vit-all-good" style="display:none;font-size:12px;color:var(--green)">
@@ -1668,8 +1684,8 @@
         <div id="rel-bar-empty" style="flex:1;background:var(--surface2);display:none;border-radius:4px"></div>
       </div>
       <div class="rel-legend">
-        <div class="rel-legend-item"><div class="rel-legend-dot" style="background:var(--green)"></div><span id="rel-lbl-ok">🟢 Nutzbar: —</span></div>
-        <div class="rel-legend-item"><div class="rel-legend-dot" style="background:var(--red)"></div><span id="rel-lbl-unk">🔴 Ohne Daten: —</span></div>
+        <div class="rel-legend-item"><div class="rel-legend-dot" style="background:var(--green)"></div><span id="rel-lbl-ok">Nutzbar: —</span></div>
+        <div class="rel-legend-item"><div class="rel-legend-dot" style="background:var(--red)"></div><span id="rel-lbl-unk">Ohne Daten: —</span></div>
       </div>
     </div>
     </div><!-- /reveal-block data-reveal=5 -->
@@ -5721,9 +5737,9 @@ function hasValidMacros(item) {
  */
 function reliabilityBadge(item) {
   if (hasValidMacros(item)) {
-    return `<span class="rel-badge ok">🟢 OK</span>`;
+    return `<span class="rel-badge ok"><span class="badge-ok">OK</span></span>`;
   }
-  return `<span class="rel-badge no-data">🔴 Keine Daten</span>`;
+  return `<span class="rel-badge no-data">Keine Daten</span>`;
 }
 
 /* Conserver analyzeReliability pour renderSummary (comptage interne)
@@ -6194,7 +6210,7 @@ function checkPackageWarning() {
     if (warnTip && nameEl) {
       const n = (nameEl.value || "").toLowerCase();
       const tipKey = Object.keys(PKG_TIPS).find(k => n.includes(k));
-      warnTip.textContent = tipKey ? "💡 " + PKG_TIPS[tipKey] : "";
+      warnTip.textContent = tipKey ? PKG_TIPS[tipKey] : "";
     }
     warnEl.classList.add("visible");
     qtyEl && qtyEl.classList.add("pkg-error");
@@ -7256,9 +7272,9 @@ function getMicroTipText() {
 }
 function getMicroStatusText() {
   const os = getDeviceOS();
-  if (os === "ios")     return getMicroStatusText();
-  if (os === "android") return "🎤 Android-Diktat: Mikrofontaste der Tastatur (Gboard: obere Leiste)";
-  return "🎤 Spracheingabe über Tastatur-Mikrofon";
+  if (os === "ios")     return "<svg aria-hidden='true' focusable='false' width='11' height='14' viewBox='0 0 12 16' fill='none' stroke='currentColor' stroke-width='1.5' style='vertical-align:middle;opacity:.7;flex-shrink:0'><rect x='3.5' y='1' width='5' height='7' rx='2.5'/><path d='M2 8a4 4 0 0 0 8 0'/><line x1='6' y1='12' x2='6' y2='15'/><line x1='4' y1='15' x2='8' y2='15'/></svg> iPhone-Diktat — Mikrofontaste neben der Leertaste";
+  if (os === "android") return "<svg aria-hidden='true' focusable='false' width='11' height='14' viewBox='0 0 12 16' fill='none' stroke='currentColor' stroke-width='1.5' style='vertical-align:middle;opacity:.7;flex-shrink:0'><rect x='3.5' y='1' width='5' height='7' rx='2.5'/><path d='M2 8a4 4 0 0 0 8 0'/><line x1='6' y1='12' x2='6' y2='15'/><line x1='4' y1='15' x2='8' y2='15'/></svg> Android-Spracherkennung — Mikrofonsymbol auf der Tastatur verwenden";
+  return "<svg aria-hidden='true' focusable='false' width='11' height='14' viewBox='0 0 12 16' fill='none' stroke='currentColor' stroke-width='1.5' style='vertical-align:middle;opacity:.7;flex-shrink:0'><rect x='3.5' y='1' width='5' height='7' rx='2.5'/><path d='M2 8a4 4 0 0 0 8 0'/><line x1='6' y1='12' x2='6' y2='15'/><line x1='4' y1='15' x2='8' y2='15'/></svg> Spracheingabe — Mikrofonsymbol der Tastatur verwenden";
 }
 
 function analyzeQuickInput() {
@@ -7391,7 +7407,7 @@ function analyzeQuickInput() {
     if (_missingWeight) {
       feedback.textContent = "Gewicht fehlt: Bitte geben Sie die Menge pro Dose, Glas oder Packung an.";
     } else {
-      feedback.textContent = "⚠️ Gewicht erforderlich. Korrigieren Sie unten oder diktieren Sie z.B.: 3 Dosen Thunfisch 160 g.";
+      feedback.textContent = "⚠ Gewicht erforderlich. Korrigieren Sie unten oder diktieren Sie z.B.: 3 Dosen Thunfisch 160 g.";
     }
     feedback.className = "quick-entry-feedback warn";
   } else {
@@ -7465,7 +7481,7 @@ async function addFoodItem() {
   // Blocage : unité emballage non mesurable
   if (PKG_UNIT_LABELS[(unit || "").toLowerCase().trim()]) {
     const pkg = PKG_UNIT_LABELS[unit.toLowerCase().trim()];
-    setHint(`⚠️ Hinzufügen nicht möglich ohne Gewichtsangabe (${pkg} ist keine Gewichtseinheit).`, "var(--red)");
+    setHint(`⚠ Hinzufügen nicht möglich ohne Gewichtsangabe (${pkg} ist keine Gewichtseinheit).`, "var(--red)");
     checkPackageWarning();
     return;
   }
@@ -7473,7 +7489,7 @@ async function addFoodItem() {
   // Verrou emballage vocal non confirmé
   if (voiceFoodMeta && voiceFoodMeta.requiresMeasuredUnit && !voiceFoodMeta.measuredUnitConfirmed) {
     const pkg = voiceFoodMeta.packageUnit || "Behälter";
-    setHint(`⚠️ Behälter erkannt ("${pkg}"), Gewicht nicht bestätigt. Bitte g, kg, ml oder L angeben.`, "var(--amber)");
+    setHint(`⚠ Behälter erkannt ("${pkg}"), Gewicht nicht bestätigt. Bitte g, kg, ml oder L angeben.`, "var(--amber)");
     return;
   }
 
@@ -7941,7 +7957,7 @@ function printInventoryByUnit() {
       const date   = w.waterDate || w.renewBefore || '';
       return `<tr><td>${w.name||''}</td><td>${w.qty||''}</td><td>${(w.liters||0).toFixed(2)} L</td><td>${state}</td><td>${date}</td></tr>`;
     }).join('');
-    _waterHtml = `<h2 style="margin-top:18px;font-size:13px">💧 Wasserreserve</h2><table><thead><tr><th>Behälter</th><th>Anzahl</th><th>Volumen</th><th>Zustand</th><th>Datum</th></tr></thead><tbody>${_wRows}</tbody></table>`;
+    _waterHtml = `<h2 style="margin-top:18px;font-size:13px">Wasserreserve</h2><table><thead><tr><th>Behälter</th><th>Anzahl</th><th>Volumen</th><th>Zustand</th><th>Datum</th></tr></thead><tbody>${_wRows}</tbody></table>`;
   }
   const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">
   <title>Detailliertes Inventar nach Einheit — ${dateStr}</title>
@@ -7956,7 +7972,7 @@ function printInventoryByUnit() {
     @page { size: A4 landscape; margin: 1cm; }
   </style>
   </head><body>
-  <h2>🖨 Detailliertes Inventar nach Einheit — ${dateStr}</h2>
+  <h2>Detailliertes Inventar nach Einheit — ${dateStr}</h2>
   <div class="note">Detailansicht nach Einheit — nützlich wenn das Telefon nicht verfügbar ist. Manuell abhaken.</div>
   <table>
     <thead><tr>
@@ -8184,7 +8200,7 @@ function showCandidatePanel(candidates, searchResult) {
       const item = document.createElement("div");
       item.className = "candidate-item";
       const kcalInfo    = c.data ? `${c.kcal_100g} kcal/100g` : "Daten unvollständig";
-      const matchLabel  = c.matchType === "exact" ? "🟢 exakt" : c.score >= 50 ? "🟠 nah" : "🔴 schwach";
+      const matchLabel  = c.matchType === "exact" ? "exakt" : c.score >= 50 ? "nah" : "schwach";
       const userBadge   = c.source === "user" ? `<span style="font-size:10px;color:var(--blue);margin-left:4px">persönlich</span>` : "";
       const displayName = c.nameDE || c.name;
       item.innerHTML = `
@@ -8370,12 +8386,12 @@ function commitManualEntry() {
   // Message de confirmation
   if (_uResult === "created") {
     setTimeout(() => setHint(
-      "💾 Lebensmittel wurde Ihrer lokalen Datenbank hinzugefügt und wird künftig erkannt.",
+      "Lebensmittel wurde Ihrer lokalen Datenbank hinzugefügt und wird künftig erkannt.",
       "var(--blue)"
     ), 200);
   } else if (_uResult === "updated") {
     setTimeout(() => setHint(
-      "💾 Persönliches Lebensmittel wurde aktualisiert.",
+      "Persönliches Lebensmittel wurde aktualisiert.",
       "var(--blue)"
     ), 200);
   }
@@ -8581,7 +8597,7 @@ function renderManualList() {
         <div class="inv-row">
           <span class="rname">${p.name}</span>
           <span class="rqty">${p.qty}</span>
-          <span class="rcal">${hasValidMacros(p) ? (p.kcal).toLocaleString("de-DE")+" kcal" : "🔴 sans données"}</span>
+          <span class="rcal">${hasValidMacros(p) ? (p.kcal).toLocaleString("de-DE")+" kcal" : "sans données"}</span>
           ${p.location ? `<span class="rloc" title="Localisation">${p.location}</span>` : ""}
           <button class="del-btn" onclick="deleteItem(${p.id})">×</button>
         </div>`).join("");
@@ -8890,8 +8906,8 @@ function openComplementaryLiquidsModal() {
     } else {
       body.innerHTML = items.map(it => {
         const loc = it.location
-          ? `<span class="compl-item-loc">📍 ${it.location}</span>`
-          : `<span class="compl-item-loc" style="opacity:.45">📍 nicht angegeben</span>`;
+          ? `<span class="compl-item-loc">${it.location}</span>`
+          : `<span class="compl-item-loc" style="opacity:.45">nicht angegeben</span>`;
         return `<div class="compl-item">
           <div class="compl-item-left"><span>${it.name}</span>${loc}</div>
           <span style="font-weight:600;color:var(--text2);white-space:nowrap;padding-left:8px">${it.liters.toFixed(1)} L</span>
@@ -9165,9 +9181,9 @@ function getVitaminRiskStatus(allItems, foodDaysBalanced) {
   else                         risk = "low";
 
   const riskMeta = {
-    low:    { icon:"🟢", text:"Mikronährstoffrisiko gering"    },
-    medium: { icon:"🟠", text:"Mikronährstoffrisiko moderat"   },
-    high:   { icon:"🔴", text:"Mikronährstoffrisiko hoch"      },
+    low:    { icon:"●", text:"Mikronährstoffrisiko gering"    },
+    medium: { icon:"▲", text:"Mikronährstoffrisiko moderat"   },
+    high:   { icon:"✕", text:"Mikronährstoffrisiko hoch"      },
   };
 
   return {
@@ -9638,7 +9654,7 @@ function suggestCalorieFoods(kcalGap) {
 
 function generateTopPriorities(summary) {
   if (summary.dataQuality.totalItems === 0)
-    return [{ icon:"📦", text:"Lebensmittel hinzufügen um eine vollständige Übersicht zu erhalten." }];
+    return [{ icon:"·", text:"Lebensmittel hinzufügen um eine vollständige Übersicht zu erhalten." }];
 
   const ad    = summary.autonomyDays;
   const nut   = summary.nutrition;
@@ -9652,40 +9668,40 @@ function generateTopPriorities(summary) {
     const _dailyW   = Math.round(getDailyWaterNeedLiters());
     const _targetD  = (typeof resilienceTargetDays !== "undefined" && resilienceTargetDays > 0)
                       ? resilienceTargetDays : 30;
-    add("💧", `Wasservorrat aufbauen (Ziel: ${_dailyW} L/Tag × ${_targetD} Tage)`);
-    add("🪣", "Wasserreserve erhöhen (Kanister, Sammlung)");
-    add("🚰", "Notfallwasserquelle sichern");
+    add("·", `Wasservorrat aufbauen (Ziel: ${_dailyW} L/Tag × ${_targetD} Tage)`);
+    add("·", "Wasserreserve erhöhen (Kanister, Sammlung)");
+    add("·", "Notfallwasserquelle sichern");
     return slots;
   }
   if (lfKey === "protein")
-    add("🥩", "Eiweiß einlagern (Hülsenfrüchte, Konserven)");
+    add("·", "Eiweiß einlagern (Hülsenfrüchte, Konserven)");
   if (lfKey === "calories")
-    add("🌾", "Kalorien erhöhen (Reis, Nudeln, Getreide, Öl)");
+    add("·", "Kalorien erhöhen (Reis, Nudeln, Getreide, Öl)");
 
   const calWeak  = lfKey !== "calories" && ad.calories > 0 && (ad.calories - real) / (real || 1) < 0.10;
   const protWeak = lfKey !== "protein"  && ad.protein  > 0 && (ad.protein  - real) / (real || 1) < 0.10;
   const fatWeak  = nut.fatCoverage.level !== "good";
 
-  if (calWeak)  add("🌾", "Kalorienreserven stärken (Getreide, Öle, Stärkebeilagen)");
-  if (protWeak) add("🥩", "Eiweiß ergänzen (Hülsenfrüchte, Eiweißpulver)");
-  if (fatWeak)  add("🫙", `Stabile Fette ergänzen — ${nut.fatCoverage.fatPercent} % (Ziel ≥ 20 %)`);
+  if (calWeak)  add("·", "Kalorienreserven stärken (Getreide, Öle, Stärkebeilagen)");
+  if (protWeak) add("·", "Eiweiß ergänzen (Hülsenfrüchte, Eiweißpulver)");
+  if (fatWeak)  add("·", `Stabile Fette ergänzen — ${nut.fatCoverage.fatPercent} % (Ziel ≥ 20 %)`);
 
   if (slots.length === 3) return slots;
 
   const missing = nut.vitaminRisk.missingMeta || [];
   if (real >= 7 && missing.length)
-    add("🥦", `Quelle für ${missing[0].label} ergänzen (${missing[0].examples})`);
+    add("·", `Quelle für ${missing[0].label} ergänzen (${missing[0].examples})`);
 
   if (real >= 7 && nut.omegaCoverage.omega3.level !== "good")
-    add("🐟", real >= 14
+    add("·", real >= 14
       ? "Omega-3 stärken (Sardinen, Leinsamen, Walnüsse, Chia)"
       : "Omega-3 ergänzen (Walnüsse, Leinsamen oder Chia)");
 
   if (real >= 14 && nut.vitaminRisk.sourceCount < 4)
-    add("🌿", "Vorrat diversifizieren für Langzeitversorgung.");
+    add("·", "Vorrat diversifizieren für Langzeitversorgung.");
 
   if (!slots.length)
-    add("✅", "Ausgewogener Vorrat — diese Vielfalt beibehalten.");
+    add("·", "Ausgewogener Vorrat — diese Vielfalt beibehalten.");
 
   return slots.slice(0, 3);
 }
@@ -10164,8 +10180,8 @@ function renderSummary() {
   if (bb && bt && bi) {
     bb.className   = `balance-block ${bal.level}`;
     bt.textContent = bal.level === "good"
-      ? "🟢 Vorrat minimal ausgewogen"
-      : "🟠 Vorrat noch nicht ausgewogen";
+      ? "Vorrat minimal ausgewogen"
+      : "Vorrat noch nicht ausgewogen";
     bi.innerHTML = [
       { ok: bal.hasProteinSource,  label: "Proteine"          },
       { ok: bal.hasFatSource,      label: "Fette"             },
@@ -10196,7 +10212,7 @@ function renderSummary() {
     if (vit.missingMeta.length) {
       misBlock.style.display = "block";
       allGood.style.display  = "none";
-      if (misTitle) misTitle.textContent = `❌ Fehlende Kategorien (${vit.missingMeta.length})`;
+      if (misTitle) misTitle.textContent = `✕ Fehlende Kategorien (${vit.missingMeta.length})`;
       misList.innerHTML = vit.missingMeta.map(m =>
         `<div class="vit-row"><span class="vit-row-icon" style="color:var(--red)">✗</span><span class="vit-row-label" style="color:var(--red)">${m.label}</span><span class="vit-row-examples" style="color:var(--red);opacity:.8">→ ${m.examples}</span></div>`
       ).join("");
@@ -10219,8 +10235,8 @@ function renderSummary() {
     if (segOk)    { segOk.style.flex    = "0"; }
     if (segUnk)   { segUnk.style.flex   = "0"; }
     if (segEmpty) { segEmpty.style.display = "block"; }
-    if (lblOk)    { lblOk.textContent   = "🟢 Nutzbar: 0 (0%)"; }
-    if (lblUnk)   { lblUnk.textContent  = "🔴 Ohne Daten: 0 (0%)"; }
+    if (lblOk)    { lblOk.textContent   = "Nutzbar: 0 (0%)"; }
+    if (lblUnk)   { lblUnk.textContent  = "Ohne Daten: 0 (0%)"; }
     // Pas de produits → bloc sans intérêt
     if (relBlock) relBlock.style.display = "none";
   } else {
@@ -10231,8 +10247,8 @@ function renderSummary() {
     }
     if (lblOk) {
       const pct = Math.round(dq.exploitableCount / dq.totalItems * 100);
-      lblOk.textContent  = `🟢 Nutzbar: ${dq.exploitableCount} (${pct}%)`;
-      lblUnk.textContent = `🔴 Ohne Daten: ${dq.nonExploitableCount} (${100 - pct}%)`;
+      lblOk.textContent  = `Nutzbar: ${dq.exploitableCount} (${pct}%)`;
+      lblUnk.textContent = `Ohne Daten: ${dq.nonExploitableCount} (${100 - pct}%)`;
     }
     // UX: Masquer le bloc qualité nutritionnelle quand les données sont complètes.
     // Le réafficher automatiquement si des produits sans données apparaissent.
@@ -10465,7 +10481,7 @@ function openDoNotLoseModal() {
     Array.isArray(w.units) ? w.units.some(u => !u.openedAt) : (w.liters > 0)
   );
   if (closedWaterItems.length > 0) {
-    html += `<div class="dontlose-section-title">💧 Wasser öffnen</div>`;
+    html += `<div class="dontlose-section-title dontlose-title-blue">Wasser öffnen</div>`;
     closedWaterItems.forEach(w => {
       const units = Array.isArray(w.units) ? w.units : [];
       const totalCount = units.length > 0 ? units.length : 1;
@@ -10483,11 +10499,11 @@ function openDoNotLoseModal() {
 
   // Abschnitt 1 : Wasser
   if (waterAlerts.length > 0) {
-    html += `<div class="dontlose-section-title">💧 Wasser erneuern</div>`;
+    html += `<div class="dontlose-section-title dontlose-title-blue">Wasser erneuern</div>`;
     waterAlerts.forEach(w => {
       const badge = w.overdue
         ? `<span class="dontlose-item-badge dontlose-badge-red">Erneuerung überfällig</span>`
-        : `<span class="dontlose-item-badge dontlose-badge-amber">Bald</span>`;
+        : `<span class="dontlose-item-badge dontlose-badge-blue">Bald</span>`;
       const sub = w.waterDate ? `Befüllt am ${w.waterDate}` : "";
       html += `<div class="dontlose-item">
         <div class="dontlose-item-name">${w.name}<div style="font-size:11px;color:var(--text3)">${w.liters.toFixed(1)} L${sub?" · "+sub:""} · erneuern vor ${w.renewBefore}</div></div>${badge}</div>`;
@@ -10497,13 +10513,13 @@ function openDoNotLoseModal() {
   const _loc = (item, openedUnit) => {
     if (openedUnit && (openedUnit.location || openedUnit.localisation)) {
       const loc = (openedUnit.location || openedUnit.localisation || "").trim();
-      if (loc && loc !== "—") return `<span class="dontlose-inline-location"> · 📍 ${loc}</span>`;
+      if (loc && loc !== "—") return `<span class="dontlose-inline-location"> · ${loc}</span>`;
     }
     if (Array.isArray(item.units)) {
       const openedWithLoc = item.units.find(u => u.openedAt && (u.location || u.localisation));
       if (openedWithLoc) {
         const loc = (openedWithLoc.location || openedWithLoc.localisation || "").trim();
-        if (loc && loc !== "—") return `<span class="dontlose-inline-location"> · 📍 ${loc}</span>`;
+        if (loc && loc !== "—") return `<span class="dontlose-inline-location"> · ${loc}</span>`;
       }
     }
     let loc = item.location || item.localisation || item.storageLocation || "";
@@ -10513,7 +10529,7 @@ function openDoNotLoseModal() {
     }
     loc = String(loc || "").trim();
     if (!loc || loc === "—") return "";
-    return `<span class="dontlose-inline-location"> · 📍 ${loc}</span>`;
+    return `<span class="dontlose-inline-location"> · ${loc}</span>`;
   };
 
   // Gemeinsamer Helfer: Löschen-Button je nach units[]
@@ -10529,7 +10545,7 @@ function openDoNotLoseModal() {
   const crit = [...foodAlerts.expired, ...foodAlerts.urgent];
   const shownIds = new Set();
   if (crit.length > 0) {
-    html += `<div class="dontlose-section-title">⚠ Abgelaufen / sofort</div>`;
+    html += `<div class="dontlose-section-title dontlose-title-red">Abgelaufen / sofort</div>`;
     crit.forEach(({ item, status }) => {
       shownIds.add(item.id);
       const badgeLabel = getDoNotLoseFoodLabel(item, status);
@@ -10540,7 +10556,7 @@ function openDoNotLoseModal() {
 
   // Abschnitt 3 : bald verbrauchen
   if (foodAlerts.soon.length > 0) {
-    html += `<div class="dontlose-section-title">🕐 Bald verbrauchen</div>`;
+    html += `<div class="dontlose-section-title dontlose-title-amber">Bald verbrauchen</div>`;
     const now3 = new Date(); now3.setHours(0,0,0,0);
     const getSortKey = ({ item }) => {
       const isOpen = item.openedAt || item.opened
@@ -10592,7 +10608,7 @@ function openDoNotLoseModal() {
     return false;
   });
   if (openItems.length > 0) {
-    html += `<div class="dontlose-section-title">🟢 Geöffnet / laufend</div>`;
+    html += `<div class="dontlose-section-title dontlose-title-green">Geöffnet / laufend</div>`;
     openItems.forEach(item => {
       const refDate = item.openedAt || (Array.isArray(item.units) && item.units.find(u=>u.openedAt)?.openedAt);
       let badgeLabel = "geöffnet";
@@ -10604,7 +10620,7 @@ function openDoNotLoseModal() {
         else if (days === 1) badgeLabel = "seit 1 Tag geöffnet";
         else                 badgeLabel = `seit ${days} Tagen geöffnet`;
       }
-      const badge = `<span class="dontlose-item-badge dontlose-badge-amber">${badgeLabel}</span>`;
+      const badge = `<span class="dontlose-item-badge dontlose-badge-green">${badgeLabel}</span>`;
       html += `<div class="dontlose-item"><div class="dontlose-item-name">${getFoodDisplayName(item)}${_loc(item)}<div style="font-size:11px;color:var(--text3);font-weight:400">${item.qty||""}</div></div>${_delBtn(item,'dntls2')}${badge}</div>`;
     });
   }
@@ -10929,7 +10945,7 @@ function detectSpeechSupport() {
 function renderSpeechStatus() {
   const el = document.getElementById("speech-status");
   if (!el) return;
-  el.textContent = "🎤 iPhone-Diktat: Mikrofontaste auf der Tastatur (neben der Leertaste)";
+  el.innerHTML = getMicroStatusText();
 }
 
 function testMicrophone() {
@@ -10937,17 +10953,17 @@ function testMicrophone() {
   // auch wenn SpeechRecognition funktioniert. 🎤-Taste für Sprachtest verwenden.
   const hint = document.getElementById("food-hint");
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    if (hint) hint.textContent = "ℹ️ navigator.mediaDevices nicht verfügbar im lokalen HTTP — kein Fehler. Testen Sie direkt die 🎤-Taste.";
+    if (hint) hint.textContent = "Mikrofon nicht verfügbar im lokalen HTTP — kein Fehler. Testen Sie direkt die 🎤-Taste.";
     return;
   }
-  if (hint) hint.textContent = "🔬 Test getUserMedia en cours…";
+  if (hint) hint.textContent = "Mikrofon-Test läuft…";
   navigator.mediaDevices.getUserMedia({ audio: true })
     .then(stream => {
       stream.getTracks().forEach(t => t.stop());
       if (hint) hint.textContent = "✓ getUserMedia autorisé.";
     })
     .catch(err => {
-      if (hint) hint.textContent = `🚫 getUserMedia refusé : ${err.name}`;
+      if (hint) hint.textContent = `Mikrofon verweigert : ${err.name}`;
     });
 }
 
@@ -10957,7 +10973,7 @@ function startRecognition({btnId, hintId, prompt, onResult, onEnd}) {
   const btn  = document.getElementById(btnId);
 
   if (!d.speechRecognition) {
-    if (hint) hint.textContent = "🎤 Voix non disponible sur ce navigateur.";
+    if (hint) hint.textContent = "Voix non disponible sur ce navigateur.";
     return;
   }
 
@@ -10979,12 +10995,12 @@ function startRecognition({btnId, hintId, prompt, onResult, onEnd}) {
 
   recognition.onerror = (e) => {
     const msgs = {
-      "not-allowed":    "🚫 Mikrofon blockiert. Erlauben Sie das Mikrofon unter Safari → Einstellungen → Websites.",
-      "no-speech":      "🎤 Keine Sprache erkannt. Nochmals versuchen.",
-      "audio-capture":  "🚫 Mikrofon nicht verfügbar. Berechtigungen prüfen.",
-      "network":        "🚫 Netzwerkfehler bei Sprache. Verbindung prüfen.",
+      "not-allowed":    "Mikrofon blockiert. Erlauben Sie es unter Safari → Einstellungen → Websites.",
+      "no-speech":      "Keine Sprache erkannt. Nochmals versuchen.",
+      "audio-capture":  "Mikrofon nicht verfügbar. Berechtigungen prüfen.",
+      "network":        "Netzwerkfehler Spracheingabe. Verbindung prüfen.",
     };
-    if (hint) hint.textContent = msgs[e.error] || `🚫 Erreur vocale : ${e.error}`;
+    if (hint) hint.textContent = msgs[e.error] || `Sprachfehler: ${e.error}`;
     showDebug?.(`[voice] onerror: ${e.error}`);
   };
 
@@ -10997,7 +11013,7 @@ function startRecognition({btnId, hintId, prompt, onResult, onEnd}) {
   try {
     recognition.start();
   } catch(err) {
-    if (hint) hint.textContent = "🚫 Impossible de démarrer la reconnaissance vocale.";
+    if (hint) hint.textContent = "Spracheingabe konnte nicht gestartet werden.";
     if (btn) btn.classList.remove("listening");
     recognition._active = false;
   }
@@ -11409,11 +11425,11 @@ function runVoiceFoodRegressionTests() {
     const row = document.createElement("div");
     row.className = "vtest-row " + (passed ? "pass" : "fail");
     const errs = errors.map(function(e) { return "<span class=\"vtest-err\">\u21b3 " + e + "</span>"; }).join("");
-    row.innerHTML = (passed ? "✅" : "❌") + " <span class=\"vtest-group\">B" + tc.box + "</span> <span class=\"vtest-text\">" + tc.input + "</span>" + errs;
+    row.innerHTML = (passed ? "·" : "✕") + " <span class=\"vtest-group\">B" + tc.box + "</span> <span class=\"vtest-text\">" + tc.input + "</span>" + errs;
     resultsEl.appendChild(row);
   });
   const total = pass + fail;
-  summaryEl.textContent = "🔒 Nicht-Regression B1+B2 — " + total + " Tests — ✅ " + pass + " bestanden — ❌ " + fail + " fehlgeschlagen";
+  summaryEl.textContent = "Nicht-Regression B1+B2 — " + total + " Tests — " + pass + " bestanden — " + fail + " fehlgeschlagen";
   summaryEl.style.color = fail === 0 ? "var(--green)" : "var(--red)";
 }
 
@@ -11422,7 +11438,7 @@ function toggleParserTestsPanel() {
   const btn = document.getElementById('toggle-parser-tests-btn');
   if (!btn) return;
   const open = document.body.classList.contains('debug-tests');
-  btn.textContent = open ? 'Tests ausblenden' : '🧪 Tests anzeigen';
+  btn.textContent = open ? 'Tests ausblenden' : 'Tests anzeigen';
 }
 
 function toggleVoiceTestPanel() {
@@ -11635,7 +11651,7 @@ function runRobustnessTests() {
   const parts = [`${total} Fälle`];
   if (pass)  parts.push(`✔ ${pass} OK`);
   if (warn)  parts.push(`⚠ ${warn} unerwartet akzeptiert`);
-  if (fail)  parts.push(`❌ ${fail} fehlgeschlagen`);
+  if (fail)  parts.push(`✕ ${fail} fehlgeschlagen`);
   summaryEl.textContent = parts.join(" — ");
   summaryEl.style.color = fail > 0 ? "var(--red)" : warn > 0 ? "var(--amber)" : "var(--green)";
 }
@@ -11657,7 +11673,7 @@ function runAllVoiceFoodTests() {
     const isLegacy = LEGACY_GROUPS.has(tc.group);
 
     const row = document.createElement("div");
-    const icon  = result.passed ? "✅" : isLegacy ? "⚠️" : "❌";
+    const icon  = result.passed ? "·" : isLegacy ? "⚠" : "✕";
     const errs  = result.errors.map(e => `<span class="vtest-err">↳ ${e}</span>`).join("");
 
     if (isLegacy) {
@@ -11685,7 +11701,7 @@ function runAllVoiceFoodTests() {
   }
 
   const total = pass + fail;
-  summaryEl.textContent = `Gepflegte Suiten: ${total} Tests — ✅ ${pass} bestanden — ❌ ${fail} fehlgeschlagen${legacy ? " · " + legacy + " Legacy nicht gezählt" : ""}`;
+  summaryEl.textContent = `Gepflegte Suiten: ${total} Tests — ${pass} bestanden — ${fail} fehlgeschlagen${legacy ? " · " + legacy + " Legacy nicht gezählt" : ""}`;
   summaryEl.style.color = fail === 0 ? "var(--green)" : "var(--red)";
 }
 
@@ -11710,6 +11726,14 @@ renderCooking();
 renderCookingItems();
 renderSummary();
 renderSpeechStatus();
+
+// Mikrofon-Hilfetexte je nach Betriebssystem anpassen
+(function(){
+  const h = document.getElementById('micro-helper-text');
+  const tip = document.getElementById('micro-tip-text');
+  if(h)   h.textContent   = getMicroHelperText();
+  if(tip) tip.textContent = getMicroTipText();
+})();
 // "Manuelle Einträge" ausblenden wenn nicht im Debug-Modus
 if (!DEBUG_MODE) {
   ["ajouts-manuels-title","manual-food-list"].forEach(id => {
@@ -12271,7 +12295,7 @@ function _openBaseDetail(key, source) {
     : "";
   if (source === "user") {
     actions.innerHTML = `${scanBtnDE}
-      <button class="bd-btn bd-btn-primary"   data-action="edit">✏️ Bearbeiten</button>
+      <button class="bd-btn bd-btn-primary"   data-action="edit">Bearbeiten</button>
       <button class="bd-btn bd-btn-danger"    data-action="delete">Löschen</button>
       <button class="bd-btn bd-btn-secondary" data-action="close">Schließen</button>`;
   } else {
@@ -12391,7 +12415,7 @@ function commitBaseFoodEditor() {
   document.getElementById("candidate-panel")?.classList.remove("visible");
   _baseFoodEditorLabel = null;
 
-  setHint("💾 Nährwerte in Ihrer persönlichen Basis gespeichert.", "var(--blue)");
+  setHint("Nährwerte in Ihrer persönlichen Basis gespeichert.", "var(--blue)");
 }
 
 function _editUserFood(id) {
@@ -12415,7 +12439,7 @@ function _deleteUserFood(id) {
   saveAppData();
   closeBaseDetail();
   renderBaseList();
-  setHint(`🗑 "${entry.label}" aus Ihrer Basis gelöscht.`, "var(--amber)");
+  setHint(`"${entry.label}" aus Ihrer Basis gelöscht.`, "var(--amber)");
 }
 
 function _createUserOverride(localKey) {
