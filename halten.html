@@ -1199,7 +1199,12 @@
     <div class="water-stats">
       <div class="stat"><div class="stat-label">Wasser gesamt</div><div class="stat-value xl" id="w-total">0</div><div class="stat-sub">Liter</div></div>
       <div class="stat"><div class="stat-label">Ungeöffnet</div><div class="stat-value xl" id="w-available">0</div><div class="stat-sub">Liter</div></div>
-      <div class="stat"><div class="stat-label">Wasser / Tag</div><div class="stat-value" id="w-daily-need">—</div><div class="stat-sub" id="w-daily-need-sub">L pro Haushalt</div></div>
+      <div class="stat">
+        <div class="stat-label">Wasser / Tag</div>
+        <div class="stat-value" id="w-daily-need">—</div>
+        <div class="stat-sub" id="w-daily-need-sub">L pro Haushalt</div>
+        <div class="stat-sub" id="w-daily-detail" style="font-size:10px;margin-top:2px;color:var(--text3)"></div>
+      </div>
       <div class="stat"><div class="stat-label">Reichweite</div><div class="stat-value xl" id="w-days">0</div><div class="stat-sub">Tage</div></div>
       <div class="stat stat-compl" role="button" tabindex="0"
            onclick="openComplementaryLiquidsModal()"
@@ -1287,6 +1292,36 @@
       <div class="stat"><div class="stat-label">Personen</div><div class="stat-value xl" id="foy-count">0</div><div class="stat-sub">im Haushalt</div></div>
       <div class="stat"><div class="stat-label">Kalorien / Tag</div><div class="stat-value" id="foy-kcal">—</div><div class="stat-sub">Haushalt</div></div>
       <div class="stat"><div class="stat-label">Modus</div><div class="stat-value" id="foy-mode" style="font-size:14px;margin-top:4px">Normal</div><div class="stat-sub">Kalorienfaktor</div></div>
+    </div>
+
+    <!-- Hauswasser — visuelle Formel -->
+    <div class="add-form" style="margin-bottom:1rem">
+      <div class="sec-title" style="margin-bottom:10px">Wasserbedarf / Person / Tag</div>
+      <!-- Zeile 1 : Trinkwasser fix -->
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+        <span style="font-size:12px;color:var(--text3);min-width:140px">Trinkwasser (fest)</span>
+        <span style="font-weight:700;font-size:15px">2 L</span>
+
+      </div>
+      <!-- + -->
+      <div style="font-size:13px;color:var(--text3);margin:2px 0 6px 8px">+</div>
+      <!-- Zeile 2 : Hauswasser -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--text3);min-width:140px">Hauswasser</span>
+        <input type="number" id="domestic-water-input" min="0" max="20" step="0.5" value="1"
+               style="width:64px;text-align:center;font-weight:700;font-size:15px"
+               oninput="updateDomesticWater(this.value)"/>
+        <span style="font-weight:700;font-size:15px">L</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin:0 0 8px 150px">Kochen, Hygiene, Geschirr, Reinigung</div>
+      <!-- = -->
+      <div style="border-top:1px solid var(--border);margin:6px 0 8px"></div>
+      <!-- Zeile 3 : Gesamt -->
+      <div style="display:flex;align-items:baseline;gap:10px">
+        <span style="font-size:12px;color:var(--text2);font-weight:600;min-width:140px">= Gesamt / Person</span>
+        <span id="domestic-water-total" style="font-weight:700;font-size:17px;color:var(--blue)">3 L</span>
+        <span style="font-size:11px;color:var(--text3)">/ Tag / Person</span>
+      </div>
     </div>
 
     <!-- Warnung wenn keine Person -->
@@ -4611,15 +4646,34 @@ function showDebug(info) {
    STATE
 =============================================== */
 const DAILY_WATER = 9;
+let domesticWaterPerPerson = 1; // L/Tag/Person (Kochen, Hygiene, Geschirr, Reinigung)
 
-/** Besoin hydrique réel du foyer : 3 L × nombre de personnes.
- *  Fallback sur DAILY_WATER si aucune personne n'est définie. */
+function updateDomesticWater(val) {
+  const v = parseFloat(val);
+  domesticWaterPerPerson = (!isNaN(v) && v >= 0) ? v : 1;
+  _syncDomesticWaterTotal();
+  saveAppData(); renderWater(); renderSummary();
+}
+function _syncDomesticWaterTotal() {
+  const el = document.getElementById("domestic-water-total");
+  if (!el) return;
+  const dwpp = (typeof domesticWaterPerPerson === "number" && domesticWaterPerPerson >= 0)
+    ? domesticWaterPerPerson : 1;
+  el.textContent = (2 + dwpp) + " L";
+}
+
+
+/** Wasserbedarf des Haushalts : (2 L Trinken fix + domesticWaterPerPerson) × Personenanzahl.
+ *  Fallback auf DAILY_WATER wenn keine Personen definiert. */
 function getDailyWaterNeedLiters() {
+  const domestic = (typeof domesticWaterPerPerson === "number" && domesticWaterPerPerson >= 0)
+    ? domesticWaterPerPerson : 1;
+  const perPerson = 2 + domestic;
   if (Array.isArray(people) && people.length > 0) {
     const n = people.reduce((s, p) => s + (p.n || 1), 0);
-    return Math.max(1, n) * 3;
+    return Math.max(1, n) * perPerson;
   }
-  return DAILY_WATER;
+  return Math.max(1, 3) * perPerson / 3;
 }
 const TARGET_DAYS = 30;
 const FALLBACK_KCAL_PER_PERSON = 2000; // fallback si aucune personne définie
@@ -5208,7 +5262,7 @@ function saveAppData() {
   try {
     const payload = JSON.stringify({
       manualFoods, waters, people, crisisMode, nextId, cookingState, cookingItems,
-      resilienceTargetDays, userFoodDB,
+      resilienceTargetDays, userFoodDB, domesticWaterPerPerson,
       savedAt: new Date().toISOString(),
     });
     localStorage.setItem(window.STORAGE_KEY, payload);
@@ -5346,6 +5400,12 @@ function loadAppData() {
       cookingState = { ...cookingState, ...saved.cookingState };
     }
     if (Array.isArray(saved.cookingItems)) { cookingItems = saved.cookingItems; migrateCookingUnits(); }
+    // Hauswasser — Standardwert 1 wenn fehlend oder ungültig
+    if (typeof saved.domesticWaterPerPerson === "number" && saved.domesticWaterPerPerson >= 0) {
+      domesticWaterPerPerson = saved.domesticWaterPerPerson;
+    } else {
+      domesticWaterPerPerson = 1;
+    }
     if (Array.isArray(saved.userFoodDB))  {
       userFoodDB = saved.userFoodDB;
       // Migration : capitaliser les labels entièrement en minuscules (anciens produits)
@@ -7108,6 +7168,9 @@ function getForcedCandidateKeysForQuery(rawName) {
 
 async function scanConfirm() {
   if (!_scanParsed) return;
+  // Masquer immédiatement scan-preview — avant tout traitement async
+  const _spEl = document.getElementById("scan-preview");
+  if (_spEl) _spEl.style.display = "none";
   document.activeElement?.blur(); // iOS : fermer clavier après validation
 
   // Sécurité : si le bouton affichait "Auswahl öffnen", ne jamais ajouter directement
@@ -7229,13 +7292,12 @@ async function scanConfirm() {
     fExp.value = appMonthToInputMonth(_scanParsed.expiry);
 
   await addFoodItem();
-  // Post-ajout : reset du scan
+  // Post-Hinzufügen: Scan zurücksetzen
   _scanParsed = null;
   const p = document.getElementById("scan-preview");
   if (p) p.style.display = "none";
-  const fb = document.getElementById("quick-feedback");
-  if (fb) { fb.textContent = ""; fb.className = "quick-entry-feedback"; }
-  // Incrémenter compteur
+  // quick-feedback nicht löschen: "✓ X hinzugefügt" soll sichtbar bleiben
+  // Inkrementiere Zähler
   _scanCount++;
   const cnt = document.getElementById("scan-count");
   if (cnt) cnt.textContent = _scanCount;
@@ -8178,6 +8240,9 @@ function commitFoodItem(pending, result) {
   localStorage.setItem("tenir_first_food_entry_de_done", "1");
   _ffuDisable();
   setTimeout(() => setHint(""), 3000);
+  // Masquer scan-preview après tout commit réussi
+  const _sp = document.getElementById("scan-preview");
+  if (_sp) _sp.style.display = "none";
   if (_scanMode) focusQuickInputSoon();
 }
 
@@ -8932,7 +8997,7 @@ function renderWater() {
   // Besoin dynamique : 3 L × nombre réel de personnes
   const personCount    = Array.isArray(people) && people.length > 0
     ? Math.max(1, people.reduce((s,p) => s + (p.n || 1), 0))
-    : Math.round(getDailyWaterNeedLiters() / 3) || 3;
+    : Math.max(1, Math.round(getDailyWaterNeedLiters() / (2 + ((typeof domesticWaterPerPerson === "number" && domesticWaterPerPerson >= 0) ? domesticWaterPerPerson : 1)))) || 3;
   const dailyWaterNeed = getDailyWaterNeedLiters();
   const days  = dailyWaterNeed > 0 ? available / dailyWaterNeed : 0;
   const waterTarget = (typeof resilienceTargetDays !== "undefined" && resilienceTargetDays > 0)
@@ -8957,6 +9022,8 @@ function renderWater() {
   const wDnEl  = document.getElementById("w-daily-need");
   const wDnSub = document.getElementById("w-daily-need-sub");
   if (wDnEl)  wDnEl.textContent  = dailyWaterNeed;
+  const wDdEl = document.getElementById("w-daily-detail");
+  if (wDdEl) wDdEl.textContent = "Trinken: 2 L · Hauswasser: " + ((typeof domesticWaterPerPerson === "number" && domesticWaterPerPerson >= 0) ? domesticWaterPerPerson : 1) + " L";
   if (wDnSub) wDnSub.textContent = `L pro Haushalt`;
   // Liquides complémentaires — indicatif
   const wComplEl = document.getElementById("w-compl");
@@ -10829,6 +10896,10 @@ function renderFoyer() {
   // Reserveziel synchronisieren
   const targetEl = document.getElementById("resilience-target-days");
   if (targetEl) targetEl.value = String(resilienceTargetDays || 30);
+  // Hauswasser synchronisieren
+  const dwEl = document.getElementById("domestic-water-input");
+  if (dwEl) dwEl.value = String((typeof domesticWaterPerPerson === "number" && domesticWaterPerPerson >= 0) ? domesticWaterPerPerson : 1);
+  _syncDomesticWaterTotal();
 
   // Checkbox sync
   document.getElementById("crisis-check").checked = crisisMode;
