@@ -525,7 +525,57 @@
     .badge-warn::before   { content:"▲";font-size:8px }
     .badge-danger::before { content:"✕";font-size:9px }
     .status-dot { display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-right:3px }
-    .debug-only { display:none !important; }
+
+    /* ── Potentiel eau / Wasserpotenzial v2 (indépendant du bilan) ── */
+    .water-potential-section { margin-top:1.25rem; }
+    .water-potential-section summary {
+      font-size:12px; font-weight:600; color:var(--text2); cursor:pointer;
+      list-style:none; display:flex; align-items:center; gap:6px;
+      padding:8px 0; border-top:0.5px solid var(--border); user-select:none; }
+    .water-potential-section summary::-webkit-details-marker { display:none; }
+    .water-potential-section summary::before { content:"▶"; font-size:9px; color:var(--text3); transition:transform .15s; }
+    .water-potential-section[open] summary::before { transform:rotate(90deg); }
+    .water-potential-section .wp-total { margin-top:12px; padding-top:10px; border-top:0.5px solid var(--border);
+      display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+    .water-potential-section .wp-total-val { font-size:18px; font-weight:800; color:var(--blue); }
+    .water-potential-section .wp-total-days { font-size:12px; color:var(--text2); }
+    /* ── Wasserpotenzial v2 ── */
+    .wp-section-title { font-size:11px; font-weight:700; color:var(--text2); text-transform:uppercase;
+      letter-spacing:.05em; margin-top:10px; margin-bottom:6px; }
+    .wp-add-row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:6px; }
+    .wp-inp { font-size:12px; padding:4px 7px; border:0.5px solid var(--border2); border-radius:5px;
+      background:var(--surface); color:var(--text1); min-width:0; flex:1 1 90px; }
+    .wp-inp-sm  { flex:0 0 72px; }
+    .wp-inp-loc { flex:0 0 100px; }
+    .wp-btn-add { font-size:11px; padding:4px 9px; border-radius:5px; border:none;
+      background:var(--blue); color:#fff; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+    .wp-btn-add:hover { opacity:.85; }
+    .wp-list { margin-bottom:4px; }
+    .wp-item { display:flex; justify-content:space-between; align-items:center;
+      padding:5px 8px; border-radius:6px; background:var(--surface2); margin-bottom:4px;
+      font-size:12px; gap:8px; }
+    .wp-item-left  { display:flex; flex-direction:column; gap:1px; min-width:0; }
+    .wp-item-name  { font-weight:600; color:var(--text1); }
+    .wp-item-info  { color:var(--text3); font-size:11px; }
+    .wp-item-loc   { color:var(--text3); font-size:10px; font-style:italic; }
+    .wp-item-right { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+    .wp-item-litres { font-weight:700; color:var(--blue); font-size:13px; white-space:nowrap; }
+    .wp-btn-use { font-size:10px; padding:2px 6px; border:0.5px solid var(--border2); border-radius:4px;
+      background:none; color:var(--blue); cursor:pointer; }
+    .wp-btn-use:hover { background:var(--blue); color:#fff; }
+    .wp-use-form { display:none; margin-top:6px; display:none; align-items:center; gap:6px; flex-wrap:wrap; }
+    .wp-use-form.open { display:flex; }
+    .wp-use-inp { font-size:12px; padding:3px 7px; border:0.5px solid var(--blue); border-radius:4px;
+      background:var(--surface); color:var(--text1); width:72px; }
+    .wp-use-confirm { font-size:11px; padding:3px 8px; border-radius:4px; border:none;
+      background:var(--blue); color:#fff; cursor:pointer; }
+    .wp-use-cancel  { font-size:11px; padding:3px 8px; border-radius:4px;
+      border:0.5px solid var(--border2); background:none; color:var(--text3); cursor:pointer; }
+    .wp-btn-del { font-size:10px; padding:2px 6px; border:0.5px solid var(--border2); border-radius:4px;
+      background:none; color:var(--text3); cursor:pointer; }
+    .wp-btn-del:hover { color:var(--red); border-color:var(--red); }
+    .wp-empty { font-size:11px; color:var(--text3); font-style:italic; padding:4px 0; }
+        .debug-only { display:none !important; }
     body.debug-mode .debug-only { display:inline-block !important; }
     #toggle-parser-tests-btn { margin-top:1.5rem; font-size:11px; opacity:.5; background:none; border:0.5px dashed var(--border2); color:var(--text3); padding:4px 10px; border-radius:4px; cursor:pointer; }
     #toggle-parser-tests-btn:hover { opacity:1; }
@@ -1184,6 +1234,13 @@
         <div class="stat-sub" id="w-daily-detail" style="font-size:10px;margin-top:2px;color:var(--text3)"></div>
       </div>
       <div class="stat"><div class="stat-label">Autonomie</div><div class="stat-value xl" id="w-days">0</div><div class="stat-sub">jours</div></div>
+      <div class="stat">
+        <div class="stat-label">Potentiel eau</div>
+        <div class="stat-value xl" id="w-potential">0</div>
+        <div class="stat-sub">litres</div>
+        <div class="stat-sub" id="w-potential-days" style="font-size:10px;margin-top:2px;color:var(--text3)">≈ 0 jour</div>
+        <div class="stat-sub" style="font-size:9px;font-style:italic;color:var(--text3)">eau théoriquement traitable</div>
+      </div>
       <div class="stat stat-compl" role="button" tabindex="0"
            onclick="openComplementaryLiquidsModal()"
            onkeydown="if(event.key==='Enter'||event.key===' ')openComplementaryLiquidsModal()">
@@ -1251,6 +1308,52 @@
     </div>
     <div class="sec-title">Stocks d'eau</div>
     <div class="inv-list" id="water-list"><div class="empty-inv">Aucun stockage d'eau enregistré.</div></div>
+    <!-- Potentiel eau — section repliable indépendante -->
+    <details class="water-potential-section" id="water-potential-details">
+      <summary>Options avancées — Potentiel eau</summary>
+
+      <!-- Comprimés -->
+      <div class="wp-section-title">Comprimés de purification</div>
+      <div class="wp-add-row" id="wp-tablets-form">
+        <input type="text"   class="wp-inp" id="wpt-name"     placeholder="Nom (ex. Micropur)"/>
+        <input type="number" class="wp-inp wp-inp-sm" id="wpt-qty"  min="0" step="1"   placeholder="Qté"/>
+        <input type="number" class="wp-inp wp-inp-sm" id="wpt-lpu"  min="0" step="0.5" placeholder="L/comprimé"/>
+        <input type="text"   class="wp-inp wp-inp-loc" id="wpt-loc" placeholder="Emplacement"/>
+        <button class="wp-btn-add" onclick="wpAddTablet()">+ Ajouter</button>
+      </div>
+      <div class="wp-list" id="wp-tablets-list"></div>
+
+      <!-- Chlore -->
+      <div class="wp-section-title" style="margin-top:12px">Chlore liquide</div>
+      <div class="wp-add-row" id="wp-chlorine-form">
+        <input type="text"   class="wp-inp" id="wpc-name"    placeholder="Nom (ex. Javel)"/>
+        <input type="number" class="wp-inp wp-inp-sm" id="wpc-btl"  min="0" step="1"   placeholder="Bouteilles"/>
+        <input type="number" class="wp-inp wp-inp-sm" id="wpc-vol"  min="0" step="10"  placeholder="ml/bouteille"/>
+        <input type="number" class="wp-inp wp-inp-sm" id="wpc-lpm"  min="0" step="0.5" placeholder="L/ml"/>
+        <input type="text"   class="wp-inp wp-inp-loc" id="wpc-loc" placeholder="Emplacement"/>
+        <button class="wp-btn-add" onclick="wpAddChlorine()">+ Ajouter</button>
+      </div>
+      <div class="wp-list" id="wp-chlorine-list"></div>
+
+      <!-- Filtres -->
+      <div class="wp-section-title" style="margin-top:12px">Filtres</div>
+      <div class="wp-add-row" id="wp-filters-form">
+        <input type="text"   class="wp-inp" id="wpf-name"    placeholder="Nom (ex. Grayl)"/>
+        <input type="number" class="wp-inp wp-inp-sm" id="wpf-cap"  min="0" step="10"  placeholder="L/filtre"/>
+        <input type="number" class="wp-inp wp-inp-sm" id="wpf-qty"  min="0" step="1"   placeholder="Qté"/>
+        <input type="text"   class="wp-inp wp-inp-loc" id="wpf-loc" placeholder="Emplacement"/>
+        <button class="wp-btn-add" onclick="wpAddFilter()">+ Ajouter</button>
+      </div>
+      <div class="wp-list" id="wp-filters-list"></div>
+
+      <!-- Total -->
+      <div class="wp-total">
+        <span class="wp-total-val" id="wp-total-litres">0 L</span>
+        <span class="wp-total-days" id="wp-total-days">≈ 0 jour</span>
+        <span style="font-size:10px;color:var(--text3);font-style:italic">théoriquement traitables</span>
+      </div>
+    </details>
+
   </div>
 
   <!-- == FOYER == -->
@@ -1272,62 +1375,8 @@
       <div class="stat"><div class="stat-label">Mode</div><div class="stat-value" id="foy-mode" style="font-size:14px;margin-top:4px">Normal</div><div class="stat-sub">kcal × facteur</div></div>
     </div>
 
-    <!-- Eau domestique — formule visuelle -->
-    <div class="add-form" style="margin-bottom:1rem">
-      <div class="sec-title" style="margin-bottom:10px">Besoin en eau / personne / jour</div>
-      <!-- Ligne 1 : boisson fixe -->
-      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
-        <span style="font-size:12px;color:var(--text3);min-width:140px">Eau potable (fixe)</span>
-        <span style="font-weight:700;font-size:15px">2 L</span>
-
-      </div>
-      <!-- Séparateur + -->
-      <div style="font-size:13px;color:var(--text3);margin:2px 0 6px 8px">+</div>
-      <!-- Ligne 2 : eau domestique modifiable -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-        <span style="font-size:12px;color:var(--text3);min-width:140px">Eau domestique</span>
-        <input type="number" id="domestic-water-input" min="0" max="20" step="0.5" value="1"
-               style="width:64px;text-align:center;font-weight:700;font-size:15px"
-               oninput="updateDomesticWater(this.value)"/>
-        <span style="font-weight:700;font-size:15px">L</span>
-      </div>
-      <div style="font-size:11px;color:var(--text3);margin:0 0 8px 150px">cuisson, hygiène, vaisselle, nettoyage</div>
-      <!-- Séparateur = -->
-      <div style="border-top:1px solid var(--border);margin:6px 0 8px"></div>
-      <!-- Ligne 3 : total -->
-      <div style="display:flex;align-items:baseline;gap:10px">
-        <span style="font-size:12px;color:var(--text2);font-weight:600;min-width:140px">= Total / personne</span>
-        <span id="domestic-water-total" style="font-weight:700;font-size:17px;color:var(--blue)">3 L</span>
-        <span style="font-size:11px;color:var(--text3)">/ jour / personne</span>
-      </div>
-    </div>
-
     <!-- Avertissement si aucune personne -->
     <div id="foy-warn"></div>
-
-    <!-- Objectif de réserve -->
-    <div class="sec-title" id="foyer-target-section-title" style="margin-top:1.25rem">Objectif de réserve</div>
-    <div class="add-form">
-      <p style="font-size:12px;color:var(--text2);margin:0 0 10px">
-        Choisissez un objectif réaliste. Vous pourrez l'augmenter progressivement.
-      </p>
-      <div class="form-row">
-        <div class="field">
-          <label>Objectif</label>
-          <select id="resilience-target-days" onchange="updateResilienceTargetDays()">
-            <option value="3">3 jours</option>
-            <option value="7">1 semaine</option>
-            <option value="14">2 semaines</option>
-            <option value="30" selected>1 mois</option>
-            <option value="60">2 mois</option>
-            <option value="90">3 mois</option>
-          </select>
-        </div>
-        <span style="font-size:12px;color:var(--text3);align-self:flex-end;padding-bottom:6px">
-          Utilisé dans le bilan pour la progression et la carte « Objectif à maintenir ».
-        </span>
-      </div>
-    </div>
 
     <!-- Formulaire ajout personne -->
     <div class="sec-title">Ajouter une personne</div>
@@ -1359,6 +1408,60 @@
     <div class="sec-title">Membres du foyer</div>
     <div class="people-list" id="people-list">
       <div class="empty-inv">Aucune personne ajoutée. Le calcul utilise 2 000 kcal/personne par défaut.</div>
+    </div>
+
+    <!-- Objectif de réserve -->
+    <div class="sec-title" id="foyer-target-section-title" style="margin-top:1.25rem">Objectif de réserve</div>
+    <div class="add-form">
+      <p style="font-size:12px;color:var(--text2);margin:0 0 10px">
+        Choisissez un objectif réaliste. Vous pourrez l'augmenter progressivement.
+      </p>
+      <div class="form-row">
+        <div class="field">
+          <label>Objectif</label>
+          <select id="resilience-target-days" onchange="updateResilienceTargetDays()">
+            <option value="3">3 jours</option>
+            <option value="7">1 semaine</option>
+            <option value="14">2 semaines</option>
+            <option value="30" selected>1 mois</option>
+            <option value="60">2 mois</option>
+            <option value="90">3 mois</option>
+          </select>
+        </div>
+        <span style="font-size:12px;color:var(--text3);align-self:flex-end;padding-bottom:6px">
+          Utilisé dans le bilan pour la progression et la carte « Objectif à maintenir ».
+        </span>
+      </div>
+    </div>
+
+    <!-- Eau domestique — formule visuelle -->
+    <div class="add-form" style="margin-bottom:1rem">
+      <div class="sec-title" style="margin-bottom:10px">Besoin en eau / personne / jour</div>
+      <!-- Ligne 1 : boisson fixe -->
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+        <span style="font-size:12px;color:var(--text3);min-width:140px">Eau potable (fixe)</span>
+        <span style="font-weight:700;font-size:15px">2 L</span>
+
+      </div>
+      <!-- Séparateur + -->
+      <div style="font-size:13px;color:var(--text3);margin:2px 0 6px 8px">+</div>
+      <!-- Ligne 2 : eau domestique modifiable -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--text3);min-width:140px">Eau domestique</span>
+        <input type="number" id="domestic-water-input" min="0" max="20" step="0.5" value="1"
+               style="width:64px;text-align:center;font-weight:700;font-size:15px"
+               oninput="updateDomesticWater(this.value)"/>
+        <span style="font-weight:700;font-size:15px">L</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin:0 0 8px 150px">cuisson, hygiène, vaisselle, nettoyage</div>
+      <!-- Séparateur = -->
+      <div style="border-top:1px solid var(--border);margin:6px 0 8px"></div>
+      <!-- Ligne 3 : total -->
+      <div style="display:flex;align-items:baseline;gap:10px">
+        <span style="font-size:12px;color:var(--text2);font-weight:600;min-width:140px">= Total / personne</span>
+        <span id="domestic-water-total" style="font-weight:700;font-size:17px;color:var(--blue)">3 L</span>
+        <span style="font-size:11px;color:var(--text3)">/ jour / personne</span>
+      </div>
     </div>
 
     <button id="toggle-parser-tests-btn" class="debug-only" onclick="toggleParserTestsPanel()">🧪 Afficher les tests</button>
@@ -4788,6 +4891,8 @@ function exportAppData() {
       manualFoods, waters, people, crisisMode, nextId, cookingState, cookingItems, userFoodDB,
     };
     data.savedAt = new Date().toISOString();
+    // Inclure Wasserpotenzial (clé séparée)
+    try { const wp = localStorage.getItem(WP_STORAGE_KEY); if (wp) data.waterPotential = JSON.parse(wp); } catch(e) {}
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
@@ -4851,6 +4956,14 @@ function importAppData(event) {
       // Fusion prudente userFoodDB — jamais écraser avec vide
       if (Array.isArray(d.userFoodDB) && d.userFoodDB.length > 0) {
         mergeUserFoodDB(d.userFoodDB);
+      }
+      // Restaurer Wasserpotenzial si présent
+      if (d.waterPotential && typeof d.waterPotential === "object") {
+        if (Array.isArray(d.waterPotential.tablets))  wpData.tablets  = d.waterPotential.tablets.map(e=>({usedQty:0,...e}));
+        if (Array.isArray(d.waterPotential.chlorine)) wpData.chlorine = d.waterPotential.chlorine.map(e=>({usedMl:0,...e}));
+        if (Array.isArray(d.waterPotential.filters))  wpData.filters  = d.waterPotential.filters.map(e=>({usedLitres:0,...e}));
+        wpSave();
+        if (typeof wpRefresh === "function") wpRefresh();
       }
       // Rebuild depuis manualFoods pour produits personnels sans fiche
       rebuildUserFoodDBFromManualFoods();
@@ -10453,7 +10566,7 @@ function renderFoyer() {
   if (people.length === 0) {
     warn.innerHTML = `<div class="need-banner warn-banner">⚠ Aucune personne définie — besoin estimé à ${FALLBACK_KCAL_PER_PERSON.toLocaleString("fr-FR")} kcal/jour (1 pers. par défaut). Ajoutez les membres de votre foyer pour un calcul précis.</div>`;
   } else {
-    warn.innerHTML = `<div class="need-banner">Besoin calculé : <strong style="margin-left:4px">${Math.round(dailyNeed).toLocaleString("fr-FR")} kcal/jour</strong> pour ${people.length} personne(s)${crisisMode?" en mode crise":""}</div>`;
+    warn.innerHTML = "";
   }
 
   // Liste personnes
@@ -11325,6 +11438,8 @@ renderCooking();
 renderCookingItems();
 renderSummary();
 renderSpeechStatus();
+loadWaterPotential();
+recalcWaterPotential();
 // Masquer "Ajouts manuels" si pas en mode debug
 if (!DEBUG_MODE) {
   ["ajouts-manuels-title","manual-food-list"].forEach(id => {
@@ -11405,8 +11520,13 @@ if (!DEBUG_MODE) {
       localStorage.setItem('tenir_onboarding_step','1');
       switchTab('foyer');
       renderFoyer();
-      setTimeout(() => document.getElementById('foyer-target-section-title')
-        ?.scrollIntoView({ block:'start', behavior:'smooth' }), 80);
+      setTimeout(() => {
+        const target = document.getElementById('foy-warn');
+        if (target) {
+          const y = target.getBoundingClientRect().top + window.scrollY - 12;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      }, 80);
     ">
       Commencer avec mon foyer
       <span class="ob-btn-label">Saisir directement mes propres données</span>
@@ -12033,6 +12153,207 @@ function _createUserOverride(localKey) {
     .then(reg => reg.update()) // vérifie une mise à jour immédiatement
     .catch(() => {});
   }
+
+/* ── Potentiel eau — module indépendant (ne modifie aucun calcul principal) ── */
+
+/* ── Potentiel eau v2 — mini-inventaire indépendant ── */
+const WP_STORAGE_KEY = "tenir_water_potential_v1";
+
+// Structure de données v2
+let wpData = { tablets: [], chlorine: [], filters: [] };
+
+function wpSave() {
+  try { localStorage.setItem(WP_STORAGE_KEY, JSON.stringify(wpData)); } catch(e) {}
+}
+
+function wpLoad() {
+  try {
+    const raw = localStorage.getItem(WP_STORAGE_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    // Migration v1 → v2
+    if (d.tabletsCount !== undefined) {
+      // Ancien format : ignorer silencieusement
+    } else {
+      if (Array.isArray(d.tablets))  wpData.tablets  = d.tablets.map(e=>({usedQty:0,    ...e}));
+      if (Array.isArray(d.chlorine)) wpData.chlorine = d.chlorine.map(e=>({usedMl:0,     ...e}));
+      if (Array.isArray(d.filters))  wpData.filters  = d.filters.map(e=>({usedLitres:0,  ...e}));
+    }
+  } catch(e) {}
+}
+
+function wpCalcLitres() {
+  const tL = wpData.tablets.reduce((s,e)  => s + Math.max(0, e.qty - (e.usedQty||0)) * e.litresPerUnit, 0);
+  const cL = wpData.chlorine.reduce((s,e) => s + Math.max(0, e.bottles*e.bottleMl - (e.usedMl||0)) * e.litresPerMl, 0);
+  const fL = wpData.filters.reduce((s,e)  => s + Math.max(0, e.qty*e.capacityLitres - (e.usedLitres||0)), 0);
+  return { tL, cL, fL, total: tL + cL + fL };
+}
+
+function wpRefresh() {
+  const { tL, cL, fL, total } = wpCalcLitres();
+  const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  const dailyNeed = typeof getDailyWaterNeedLiters==="function" ? getDailyWaterNeedLiters() : 3;
+  const days = dailyNeed > 0 ? Math.round(total / dailyNeed) : 0;
+  const daysTxt = `≈ ${days.toLocaleString("fr-FR")} jour${days > 1 ? "s" : ""}`;
+  set("wp-total-litres",  `${total.toLocaleString("fr-FR",{maximumFractionDigits:0})} L`);
+  set("wp-total-days",    daysTxt);
+  set("w-potential",      total.toLocaleString("fr-FR", {maximumFractionDigits:0}));
+  set("w-potential-days", daysTxt);
+  wpRenderList("wp-tablets-list",  wpData.tablets,  wpRenderTablet,  "Aucun comprimé");
+  wpRenderList("wp-chlorine-list", wpData.chlorine, wpRenderChlorine,"Aucun chlore");
+  wpRenderList("wp-filters-list",  wpData.filters,  wpRenderFilter,  "Aucun filtre");
+  wpSave();
+}
+
+function wpRenderList(listId, arr, renderFn, emptyTxt) {
+  const el = document.getElementById(listId);
+  if (!el) return;
+  if (!arr.length) { el.innerHTML = `<div class="wp-empty">${emptyTxt}</div>`; return; }
+  el.innerHTML = arr.map((e, i) => renderFn(e, i)).join("");
+}
+
+function wpRenderTablet(e, i) {
+  const remaining = Math.max(0, e.qty - (e.usedQty||0));
+  const litres = (remaining * e.litresPerUnit).toLocaleString("fr-FR", {maximumFractionDigits:0});
+  const usedTxt = e.usedQty ? ` · ${e.usedQty} utilisé${e.usedQty>1?"s":""}` : "";
+  return `<div class="wp-item" id="wp-item-t-${i}">
+    <div class="wp-item-left">
+      <span class="wp-item-name">${e.name}</span>
+      <span class="wp-item-info">${remaining} comprimé${remaining!==1?"s":""} restant${remaining!==1?"s":""}${usedTxt} × ${e.litresPerUnit} L/comprimé</span>
+      ${e.location ? `<span class="wp-item-loc">✓ ${e.location}</span>` : ""}
+    </div>
+    <div class="wp-item-right">
+      <span class="wp-item-litres">${litres} L</span>
+      <button class="wp-btn-use" onclick="wpToggleUseForm('t',${i})">Utiliser</button>
+      <button class="wp-btn-del" onclick="wpDelTablet(${i})">Supprimer</button>
+    </div>
+    <div class="wp-use-form" id="wp-use-t-${i}">
+      <input class="wp-use-inp" id="wp-use-inp-t-${i}" type="number" min="0" step="1" placeholder="Comprimés utilisés"/>
+      <button class="wp-use-confirm" onclick="wpConfirmUse('t',${i})">Confirmer</button>
+      <button class="wp-use-cancel"  onclick="wpToggleUseForm('t',${i})">Annuler</button>
+    </div>
+  </div>`;
+}
+
+function wpRenderChlorine(e, i) {
+  const remainMl = Math.max(0, e.bottles*e.bottleMl - (e.usedMl||0));
+  const litres = (remainMl * e.litresPerMl).toLocaleString("fr-FR", {maximumFractionDigits:0});
+  const usedTxt = e.usedMl ? ` · ${e.usedMl} ml utilisés` : "";
+  return `<div class="wp-item" id="wp-item-c-${i}">
+    <div class="wp-item-left">
+      <span class="wp-item-name">${e.name}</span>
+      <span class="wp-item-info">${remainMl.toLocaleString("fr-FR")} ml restants${usedTxt} × ${e.litresPerMl} L/ml</span>
+      ${e.location ? `<span class="wp-item-loc">✓ ${e.location}</span>` : ""}
+    </div>
+    <div class="wp-item-right">
+      <span class="wp-item-litres">${litres} L</span>
+      <button class="wp-btn-use" onclick="wpToggleUseForm('c',${i})">Utiliser</button>
+      <button class="wp-btn-del" onclick="wpDelChlorine(${i})">Supprimer</button>
+    </div>
+    <div class="wp-use-form" id="wp-use-c-${i}">
+      <input class="wp-use-inp" id="wp-use-inp-c-${i}" type="number" min="0" step="1" placeholder="ml utilisés"/>
+      <button class="wp-use-confirm" onclick="wpConfirmUse('c',${i})">Confirmer</button>
+      <button class="wp-use-cancel"  onclick="wpToggleUseForm('c',${i})">Annuler</button>
+    </div>
+  </div>`;
+}
+
+function wpRenderFilter(e, i) {
+  const totalCap = e.qty * e.capacityLitres;
+  const remaining = Math.max(0, totalCap - (e.usedLitres||0));
+  const litres = remaining.toLocaleString("fr-FR", {maximumFractionDigits:0});
+  const usedTxt = e.usedLitres ? ` · ${e.usedLitres} L filtrés` : "";
+  return `<div class="wp-item" id="wp-item-f-${i}">
+    <div class="wp-item-left">
+      <span class="wp-item-name">${e.name}</span>
+      <span class="wp-item-info">${litres} L restants${usedTxt} (${e.qty} × ${e.capacityLitres} L/filtre)</span>
+      ${e.location ? `<span class="wp-item-loc">✓ ${e.location}</span>` : ""}
+    </div>
+    <div class="wp-item-right">
+      <span class="wp-item-litres">${litres} L</span>
+      <button class="wp-btn-use" onclick="wpToggleUseForm('f',${i})">Utiliser</button>
+      <button class="wp-btn-del" onclick="wpDelFilter(${i})">Supprimer</button>
+    </div>
+    <div class="wp-use-form" id="wp-use-f-${i}">
+      <input class="wp-use-inp" id="wp-use-inp-f-${i}" type="number" min="0" step="1" placeholder="Litres filtrés"/>
+      <button class="wp-use-confirm" onclick="wpConfirmUse('f',${i})">Confirmer</button>
+      <button class="wp-use-cancel"  onclick="wpToggleUseForm('f',${i})">Annuler</button>
+    </div>
+  </div>`;
+}
+
+function wpAddTablet() {
+  const g = id => document.getElementById(id);
+  const name = (g("wpt-name")?.value||"").trim();
+  const qty  = Math.max(0, parseFloat(g("wpt-qty")?.value)||0);
+  const lpu  = Math.max(0, parseFloat(g("wpt-lpu")?.value)||0);
+  const loc  = (g("wpt-loc")?.value||"").trim();
+  if (!name || qty <= 0 || lpu <= 0) return;
+  wpData.tablets.push({ name, qty, litresPerUnit: lpu, location: loc, usedQty: 0 });
+  ["wpt-name","wpt-qty","wpt-lpu","wpt-loc"].forEach(id => { const el=g(id); if(el) el.value=""; });
+  wpRefresh();
+}
+
+function wpAddChlorine() {
+  const g = id => document.getElementById(id);
+  const name = (g("wpc-name")?.value||"").trim();
+  const btl  = Math.max(0, parseFloat(g("wpc-btl")?.value)||0);
+  const vol  = Math.max(0, parseFloat(g("wpc-vol")?.value)||0);
+  const lpm  = Math.max(0, parseFloat(g("wpc-lpm")?.value)||0);
+  const loc  = (g("wpc-loc")?.value||"").trim();
+  if (!name || btl <= 0 || vol <= 0 || lpm <= 0) return;
+  wpData.chlorine.push({ name, bottles: btl, bottleMl: vol, litresPerMl: lpm, location: loc, usedMl: 0 });
+  ["wpc-name","wpc-btl","wpc-vol","wpc-lpm","wpc-loc"].forEach(id => { const el=g(id); if(el) el.value=""; });
+  wpRefresh();
+}
+
+function wpAddFilter() {
+  const g = id => document.getElementById(id);
+  const name = (g("wpf-name")?.value||"").trim();
+  const cap  = Math.max(0, parseFloat(g("wpf-cap")?.value)||0);
+  const qty  = Math.max(0, parseFloat(g("wpf-qty")?.value)||0);
+  const loc  = (g("wpf-loc")?.value||"").trim();
+  if (!name || cap <= 0 || qty <= 0) return;
+  wpData.filters.push({ name, capacityLitres: cap, qty, location: loc, usedLitres: 0 });
+  ["wpf-name","wpf-cap","wpf-qty","wpf-loc"].forEach(id => { const el=g(id); if(el) el.value=""; });
+  wpRefresh();
+}
+
+
+function wpToggleUseForm(type, i) {
+  const form = document.getElementById(`wp-use-${type}-${i}`);
+  if (!form) return;
+  const open = form.classList.toggle("open");
+  if (open) {
+    const inp = document.getElementById(`wp-use-inp-${type}-${i}`);
+    if (inp) { inp.value = ""; inp.focus(); }
+  }
+}
+function wpConfirmUse(type, i) {
+  const inp = document.getElementById(`wp-use-inp-${type}-${i}`);
+  if (!inp) return;
+  const n = parseFloat(inp.value);
+  if (isNaN(n) || n <= 0) return;
+  if (type === "t") {
+    const e = wpData.tablets[i]; if (!e) return;
+    e.usedQty = Math.min(e.qty, (e.usedQty||0) + n);
+  } else if (type === "c") {
+    const e = wpData.chlorine[i]; if (!e) return;
+    e.usedMl = Math.min(e.bottles*e.bottleMl, (e.usedMl||0) + n);
+  } else if (type === "f") {
+    const e = wpData.filters[i]; if (!e) return;
+    e.usedLitres = Math.min(e.qty*e.capacityLitres, (e.usedLitres||0) + n);
+  }
+  wpRefresh();
+}
+function wpDelTablet(i)  { wpData.tablets.splice(i,1);  wpRefresh(); }
+function wpDelChlorine(i){ wpData.chlorine.splice(i,1); wpRefresh(); }
+function wpDelFilter(i)  { wpData.filters.splice(i,1);  wpRefresh(); }
+
+function loadWaterPotential()  { wpLoad();    wpRefresh(); }
+function recalcWaterPotential(){ wpRefresh(); }
+
+
 </script>
 
 <!-- ── Base alimentaire modale ── -->
