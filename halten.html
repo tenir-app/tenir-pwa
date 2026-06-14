@@ -4220,6 +4220,7 @@ function normalizeFoodQuery(query) {
   // 1. Normalisation de base (accents, casse, ponctuation)
   let q = (query)
     .toLowerCase()
+    .replace(/\u00df/g, "ss") // ß → ss : ne se décompose pas en NFD
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9 ]/g, " ")
     .replace(/\s+/g, " ").trim();
