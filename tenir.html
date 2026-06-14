@@ -3812,9 +3812,11 @@ function mergeUserFoodDB(importedDB) {
     // Vérifier par id d'abord
     const byId = entry.id ? userFoodDB.find(e => e.id === entry.id) : null;
     if (byId) {
-      // Fusionner les champs manquants uniquement
-      if (!byId.nutrition && entry.nutrition) byId.nutrition = entry.nutrition;
-      if (!byId.aliases?.length && entry.aliases?.length) byId.aliases = entry.aliases;
+      // Le JSON importé est la source de vérité — écraser les macros existantes
+      if (entry.nutrition) byId.nutrition = entry.nutrition;
+      if (entry.aliases?.length) byId.aliases = entry.aliases;
+      if (entry.label) byId.label = entry.label;
+      byId.updatedAt = new Date().toISOString();
       return;
     }
     // Vérifier par label normalisé
