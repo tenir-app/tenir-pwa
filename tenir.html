@@ -3994,7 +3994,7 @@ function getFoodDataSync(name) {
     const coverage = nTokens.length > 0
       ? qTokens.filter(qt => nTokens.some(nt => nt === qt || nt.startsWith(qt) || qt.startsWith(nt))).length / nTokens.length
       : 1;
-    if (um.exact || coverage >= 0.8) {
+    if (um.exact || coverage >= 0.8 || um.score >= 85) {
       return {
         data: {
           kcal:    um.entry.nutrition.kcal,

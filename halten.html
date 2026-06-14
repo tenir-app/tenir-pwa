@@ -4513,8 +4513,8 @@ function getFoodDataSync(name) {
     const _coverage = _nTok.length > 0
       ? _qTok.filter(qt => _nTok.some(nt => nt === qt || nt.startsWith(qt) || qt.startsWith(nt))).length / _nTok.length
       : 1;
-    if (!best.exact && _coverage < 0.8) {
-      // Query trop générique → ne pas matcher directement, laisser passer aux candidats
+    if (!best.exact && _coverage < 0.8 && best.score < 85) {
+      // Query trop générique ET score faible → ne pas matcher directement
       // Le produit personnel sera injecté en tête de sélection via _userCands
     } else {
     const candidates = userMatches.slice(0, 6).map(m => ({
