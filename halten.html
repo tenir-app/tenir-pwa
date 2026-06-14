@@ -575,6 +575,10 @@
       background:none; color:var(--text3); cursor:pointer; }
     .wp-btn-del:hover { color:var(--red); border-color:var(--red); }
     .wp-empty { font-size:11px; color:var(--text3); font-style:italic; padding:4px 0; }
+        .btn-back-to-scan { font-size:11px; padding:4px 10px; border-radius:99px;
+      border:0.5px solid var(--border2); background:none; color:var(--text3);
+      cursor:pointer; display:flex; align-items:center; gap:4px; margin-bottom:10px; }
+    .btn-back-to-scan:hover { color:var(--text1); border-color:var(--text3); }
         .debug-only { display:none !important; }
     body.debug-mode .debug-only { display:inline-block !important; }
     #toggle-parser-tests-btn { margin-top:1.5rem; font-size:11px; opacity:.5; background:none; border:0.5px dashed var(--border2); color:var(--text3); padding:4px 10px; border-radius:4px; cursor:pointer; }
@@ -7217,6 +7221,11 @@ function scanManualEntry() {
 
 function scanChooseFromBase() {
   const sp = _scanParsed;
+  // Rendre le bouton Retour visible dans la modale base
+  setTimeout(() => {
+    const bb = document.getElementById("base-back-btn");
+    if (bb) bb.style.display = "";
+  }, 0);
   const rawQ = (sp && (sp._rawName || sp.name)) ||
                (document.getElementById("quick-input") || {}).value || "";
   if (typeof openBaseModal === "function") {
@@ -8369,6 +8378,13 @@ function showCandidatePanel(candidates, searchResult) {
 
   list.innerHTML = "";
 
+  // Zurück-Schaltfläche zur Scan-Vorschau
+  const backBtn = document.createElement("button");
+  backBtn.className = "btn-back-to-scan";
+  backBtn.textContent = "← Zurück";
+  backBtn.onclick = backToScanPreview;
+  list.appendChild(backBtn);
+
   // Filtrer les candidats trop faibles (dérivés pénalisés, score < 40)
   const filteredCandidates = candidates.filter(c => c.score >= 40);
   const displayCandidates  = filteredCandidates.length ? filteredCandidates : candidates;
@@ -8381,11 +8397,12 @@ function showCandidatePanel(candidates, searchResult) {
       item.className = "candidate-item";
       const kcalInfo    = c.data ? `${c.kcal_100g} kcal/100g` : "Daten unvollständig";
       const matchLabel  = c.matchType === "exact" ? "exakt" : c.score >= 50 ? "nah" : "schwach";
-      const userBadge   = c.source === "user" ? `<span style="font-size:10px;color:var(--blue);margin-left:4px">persönlich</span>` : "";
+      const isUserCand  = c.source === "user";
+      const userBadge   = isUserCand ? `<span style="font-size:10px;color:var(--blue);margin-left:6px;font-weight:600">Eigene ★</span>` : "";
       const displayName = c.nameDE || c.name;
       item.innerHTML = `
         <span class="ci-name">${displayName}${userBadge}</span>
-        <span class="ci-kcal">${kcalInfo}</span>
+        <span class="ci-kcal">${kcalInfo}${isUserCand ? ` · <span style="color:var(--blue);font-size:11px">personalisiert</span>` : ""}</span>
         <span class="ci-score">${matchLabel}</span>
       `;
       item.addEventListener("click", () => {
@@ -8422,6 +8439,7 @@ function showManualEntryPrompt(name, kg, expiry, useFrom) {
   if (!panel || !list) return;
 
   list.innerHTML = `
+    <button class="btn-back-to-scan" onclick="backToScanPreview()">← Zurück</button>
     <div style="font-size:13px;color:var(--text2);margin-bottom:8px">
       Manuelle Eingabe für: <strong>${name}</strong>
     </div>
@@ -12267,7 +12285,10 @@ function ensurePanelNavFooters() {
         <div class="base-title">Lebensmittelbasis</div>
         <div class="base-sub">Produkte aus der integrierten Basis und von Ihnen hinzugefügte Produkte.</div>
       </div>
-      <button class="base-close" onclick="closeBaseModal()" aria-label="Schließen">✕</button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button class="btn-back-to-scan" id="base-back-btn" onclick="backToScanPreview()" style="display:none;margin-bottom:0">← Zurück</button>
+        <button class="base-close" onclick="closeBaseModal()" aria-label="Schließen">✕</button>
+      </div>
     </div>
     <div class="base-controls">
       <input class="base-search" id="base-search" type="search" placeholder="Suchen…" oninput="renderBaseList()" />
@@ -12304,7 +12325,10 @@ function ensurePanelNavFooters() {
 let _baseFilter = "all";
 
 function openBaseModal() {
-  _scanBaseContext = null; // réinitialiser — sera réassigné par scanChooseFromBase() si besoin
+  _scanBaseContext = null;
+  // Sans contexte scan, masquer le bouton Retour
+  const bb = document.getElementById("base-back-btn");
+  if (bb) bb.style.display = "none";
   const overlay = document.getElementById("base-overlay");
   overlay.classList.add("open");
   document.getElementById("base-search").value = "";
@@ -12842,6 +12866,21 @@ function wpDelFilter(i)  { wpData.filters.splice(i,1);  wpRefresh(); }
 function loadWaterPotential()  { wpLoad();    wpRefresh(); }
 function recalcWaterPotential(){ wpRefresh(); }
 
+
+
+/* ── Retour vers l'aperçu scan (saisie manuelle / base alimentaire) ── */
+function backToScanPreview() {
+  // Fermer candidate-panel si ouvert
+  const cp = document.getElementById("candidate-panel");
+  if (cp) cp.classList.remove("visible");
+  // Fermer base-overlay si ouverte
+  closeBaseModal();
+  // Réafficher scan-preview si _scanParsed est encore en mémoire
+  if (_scanParsed) {
+    const sp = document.getElementById("scan-preview");
+    if (sp) sp.style.display = "block";
+  }
+}
 
 </script>
 
